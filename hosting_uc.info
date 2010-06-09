@@ -1,0 +1,8 @@
+; $Id$
+name = "Hosting Ubercart Products"
+description = "Define content types and products for hosting"
+core = 6.x
+package = "Hosting"
+
+dependencies[] = uc_product
+dependencies[] = uc_attribute

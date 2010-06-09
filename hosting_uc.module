@@ -1,0 +1,26 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook menu
+ */
+function hosting_uc_menu () {
+
+  $items = array();
+
+  $items['tests/hosting-uc'] = array(
+    'title' => t('Ubercart integration test page'),
+    'access arguments' => array('access administration pages'),
+    'page callback' => 'hosting_uc_test_page',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function hosting_uc_test_page () {
+  include_once (drupal_get_path('module', 'hosting_uc') . '/include/hosting_uc.products.inc');
+  return hosting_uc_products_add_product();
+}
+
+?>
