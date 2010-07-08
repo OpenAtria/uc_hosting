@@ -1,6 +1,9 @@
 <?php
 // $Id$
 
+// This file sets up the environment for attributes to live in
+include_once (drupal_get_path('module', 'hosting_uc') . '/include/hosting_uc.quota_attributes.inc');
+
 /**
  * Implementation of hook menu
  */
@@ -19,8 +22,186 @@ function hosting_uc_menu () {
 }
 
 function hosting_uc_test_page () {
-  include_once (drupal_get_path('module', 'hosting_uc') . '/include/hosting_uc.products.inc');
-  return hosting_uc_products_add_product();
+  return hosting_uc_quotas_create_attributes();
 }
 
-?>
+/**
+ * Implementation of hook_order
+ *
+ * Actions to take on the creation or deletion of an order involving an aegir product
+ */
+function hosting_uc_order ($op, &$arg1, $arg2) {
+  switch ($op) {
+
+    case 'update':
+      if ($arg2 == 'completed') {
+        foreach ($arg1->products as $product) {
+          if (_hosting_uc_has_feature ($product)) {
+            // Create the appropriate client based on the purchasers billing info
+            _hosting_uc_add_client($arg1);
+          }
+        }
+      }
+      break;
+
+    case 'delete':
+      foreach ($arg1->products as $product) {
+        if (_hosting_uc_has_feature ($product)) {
+          // Undo our evil unholy things
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+
+/**
+ * Implementation of hook_product_feature().
+ */
+function hosting_uc_product_feature () {
+  $features[] = array(
+    'id' => 'hosting',
+    'title' => t('Integration with hosting'),
+    'callback' => 'hosting_uc_feature_form',
+    'delete' => 'hosting_uc_feature_delete',
+    'settings' => 'hosting_uc_feature_settings',
+  );
+
+  return $features;
+}
+
+/**
+ * Callback to add the form on the product feature page
+ */
+function hosting_uc_feature_form ($form_state, $node, $feature) {
+  $form = array();
+
+  if (!empty($feature)) {
+    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_aegir_products} WHERE pfid = %d", $feature['pfid']));
+  }
+
+    // Grab all the models on this product.
+  $models = uc_product_get_models($node);
+
+  $form['model'] = array(
+    '#type' => 'select',
+    '#title' => t('SKU'),
+    '#default_value' => $hosting_product->model,
+    '#description' => t('This is the SKU that will need to be purchased to associate the purchase with a site.'),
+    '#options' => $models,
+  );
+
+  return uc_product_feature_form ($form);
+}
+
+/**
+ * Validation for the feature form
+ */
+
+function hosting_uc_feature_form_validate ($form, &$form_state) {
+
+}
+
+/**
+ * Submit the feature settings
+ */
+function hosting_uc_feature_form_submit ($form, &$form_state) {
+
+  $hosting_product = array(
+    'pfid' => $form_state['values']['pfid'],
+    'model' => $form_state['values']['model'],
+  );
+
+  $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
+
+  $data = array(
+    'pfid' => $form_state['values']['pfid'],
+    'nid' => $form_state['values']['nid'],
+    'fid' => 'hosting',
+    'description' => $description,
+  );
+
+  $form_state['redirect'] = uc_product_feature_save($data);
+
+  // Set the pfid in our hosting_product array
+  if (empty($hosting_product['pfid'])) {
+    $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
+  }
+
+  $hosting_product['hpid'] = db_result(db_query("SELECT hpid FROM {hosting_uc_products} WHERE pfid = %d", $hosting_product['pfid']));
+
+  // We will use this to write to the right place in our products table
+  if ($hosting_product['hpid']) {
+    $key = 'hpid';
+  }
+  else {
+    $key = NULL;
+  }
+
+  drupal_write_record ('hosting_uc_products', $hosting_product, $key);
+}
+
+/**
+ * Callback to delete the feature
+ */
+function hosting_uc_feature_delete ($feature) {
+  db_query("DELETE FROM {uc_aegir_products} WHERE pfid = %d", $feature['pfid']);
+}
+
+/**
+ * Placeholder for an eventual feature settings form
+ */
+function hosting_uc_feature_settings () {
+  $form = array();
+  return $form;
+}
+
+/**
+ * Return TRUE if the given product (from an order) has the aegir feature
+ * and also a correct SKU.
+ */
+function _hosting_uc_has_feature ($product) {
+  $pfid = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {hosting_uc_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting' AND pf.nid = %d AND (hp.model = '' OR hp.model = '%s')", $product->nid, $product->model));
+  return $pfid;
+}
+
+/**
+ * Create a client
+ */
+function _hosting_uc_add_client ($order) {
+
+  $user = user_load(array('uid' => $order->uid));
+
+  // Construct the client object from the product
+  $client = new stdClass();
+  $client->type = 'client';
+  $client->title = '';
+  $client->email = $user->mail;
+  $client->email_confirm = $user->mail;
+  $client->client_name = "{$order->delivery_first_name} {$order->delivery_last_name}";
+  $client->uid = $order->uid;
+  $client->name = $user->name;
+
+  // Set the client organisation to something that exists
+  if ($order->delivery_company) {
+    $client->organization = $order->delivery_company;
+  }
+  else if ($product->billing_company) {
+    $client->organization = $order->billing_company;
+  }
+  else {
+    $client->organization = $client->client_name;
+  }
+
+  //drupal_set_message('<pre>' . var_export($product,true) . '</pre>');
+
+  // Validate the node
+  node_validate($client);
+
+  // Save the node
+  $client->status = 1;
+  node_save($client);
+}

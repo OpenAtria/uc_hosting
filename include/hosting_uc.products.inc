@@ -19,5 +19,3 @@ function hosting_uc_products_add_product ($product = 'hosting_uc_shared_aegir') 
 
   return FALSE;
 }
-
-?>

@@ -1,5 +1,105 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ * Schemas, install, and uninstall hooks
+ */
+
+/**
+ * Imp of hook_schema
+ */
+function hosting_uc_schema () {
+  $schema = array();
+
+
+  $schema['hosting_uc_products'] = array(
+    'description' => 'Maps aegir product features to a specific hosting client',
+    'fields' => array(
+      'hpid' => array(
+        'description' => 'IDs the hosting product.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'pfid' => array(
+        'description' => 'The {uc_product_features}.pfid.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'model' => array(
+        'description' => 'The product model.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('hpid'),
+  );
+
+  $schema['hosting_uc_quotas'] = array(
+    'description' => 'Maps quotas to a specific attribute',
+    'fields' => array(
+      'qid' => array(
+        'description' => 'IDs the quota.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'aid' => array(
+        'description' => 'The {uc_attributes}.aid.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'quota' => array(
+        'description' => 'The machine name of the quota, as it would appear in {hosting_client_quota}.resource.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('qid'),
+  );
+
+  $schema['hosting_uc_quota_options'] = array(
+    'description' => 'Stores integer values associated to options.',
+    'fields' => array(
+      'oid' => array(
+        'description' => 'The value from {uc_attribute_options}.oid.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'value' => array(
+        'description' => 'The quota limit to assign when this option is chosen.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Imp of hook_install
+ */
+function hosting_uc_install () {
+  drupal_install_schema('hosting_uc');
+}
+
+/**
+ * Imp of hook_uninstall
+ */
+function hosting_uc_uninstall () {
+  drupal_uninstall_schema('hosting_uc');
+}
 
 ?>
