@@ -22,7 +22,11 @@ function hosting_uc_menu () {
 }
 
 function hosting_uc_test_page () {
-  return hosting_uc_quotas_create_attributes();
+  $output = '';
+  $output .= hosting_uc_quotas_create_attributes();
+  include_once(drupal_get_path('module', 'hosting_uc') . '/include/hosting_uc.products.inc');
+  $output .= hosting_uc_products_add_product();
+  return $output;
 }
 
 /**

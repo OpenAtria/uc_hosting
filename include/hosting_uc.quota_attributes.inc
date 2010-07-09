@@ -17,7 +17,7 @@ function hosting_uc_quotas_create_attributes () {
 
     // This is a one table operation so lets just insert the data directly into the table
     if (!$attr_id) {
-      db_query("INSERT INTO {uc_attributes} (name, label, ordering, required, display, descriptioni)
+      db_query("INSERT INTO {uc_attributes} (name, label, ordering, required, display, description)
         VALUES ('%s', '%s', %d, %d, %d, '%s')",
         $rname,
         $resource['title'],

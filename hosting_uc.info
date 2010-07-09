@@ -6,3 +6,4 @@ package = "Hosting"
 
 dependencies[] = uc_product
 dependencies[] = uc_attribute
+dependencies[] = hosting_quota
