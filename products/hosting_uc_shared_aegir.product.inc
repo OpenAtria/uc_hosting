@@ -44,7 +44,6 @@ if (in_array('sites', $resource_names)) {
   // Determine the attribute id for number of sites
   $attr_id = db_result(db_query('SELECT q.aid FROM {hosting_uc_quotas} q WHERE q.quota = "%s"', 'sites'));
 
-  // This is a one table operation so lets just insert the data directly into the table
   $attr_values = array();
 
   // Grab the attribute for later
@@ -61,7 +60,10 @@ if (in_array('sites', $resource_names)) {
     'weight' => '',
   );
   if (!db_result(db_query('SELECT o.oid FROM {uc_attribute_options} o WHERE o.name = "%s" AND o.aid = %d', $opt_values['name'], $attr_id))) {
+    // Create the attribute
     db_query("INSERT INTO {uc_attribute_options} (aid, name, cost, price, weight, ordering) VALUES (%d, '%s', %f, %f, %f, %d)", $opt_values['aid'], $opt_values['name'], $opt_values['cost'], $opt_values['price'], $opt_values['weight'], $opt_values['ordering']);
+    // Assign the appropriate quota_value
+    db_query('INSERT INTO {hosting_uc_quota_options} (oid, value) VALUES ((SELECT MAX(oid) FROM {uc_attribute_options}), %d)', $opt_values['hosting_quota_value']);
   }
   $opt_values = array();
 
@@ -76,6 +78,8 @@ if (in_array('sites', $resource_names)) {
   );
   if (!db_result(db_query('SELECT o.oid FROM {uc_attribute_options} o WHERE o.name = "%s" AND o.aid = %d', $opt_values['name'], $attr_id))) {
     db_query("INSERT INTO {uc_attribute_options} (aid, name, cost, price, weight, ordering) VALUES (%d, '%s', %f, %f, %f, %d)", $opt_values['aid'], $opt_values['name'], $opt_values['cost'], $opt_values['price'], $opt_values['weight'], $opt_values['ordering']);
+    // Assign the appropriate quota_value
+    db_query('INSERT INTO {hosting_uc_quota_options} (oid, value) VALUES ((SELECT MAX(oid) FROM {uc_attribute_options}), %d)', $opt_values['hosting_quota_value']);
   }
   $opt_values = array();
 
@@ -91,6 +95,8 @@ if (in_array('sites', $resource_names)) {
   );
   if (!db_result(db_query('SELECT o.oid FROM {uc_attribute_options} o WHERE o.name = "%s" AND o.aid = %d', $opt_values['name'], $attr_id))) {
     db_query("INSERT INTO {uc_attribute_options} (aid, name, cost, price, weight, ordering) VALUES (%d, '%s', %f, %f, %f, %d)", $opt_values['aid'], $opt_values['name'], $opt_values['cost'], $opt_values['price'], $opt_values['weight'], $opt_values['ordering']);
+    // Assign the appropriate quota_value
+    db_query('INSERT INTO {hosting_uc_quota_options} (oid, value) VALUES ((SELECT MAX(oid) FROM {uc_attribute_options}), %d)', $opt_values['hosting_quota_value']);
   }
   $opt_values = array();
 

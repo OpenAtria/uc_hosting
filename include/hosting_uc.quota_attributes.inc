@@ -81,12 +81,20 @@ function hosting_uc_quota_check_limit ($form, &$form_state) {
  * Save the new limit
  */
 function hosting_uc_quota_save_limit ($form, &$form_state) {
+  // There is already a quota value for this option
   if ($oid = db_result(db_query('SELECT oid FROM {hosting_uc_quota_options} WHERE oid = %d', $form['oid']['#value']))) {
     db_query('UPDATE {hosting_uc_quota_options} SET value = %d WHERE oid = %d', $oid, $form_state['values']['hosting_quota_value']);
   }
+
+  // We are modifying an existing option without a quota value
+  else if ($form_state['values']['oid']) {
+    db_query('INSERT INTO {hosting_uc_quota_options} (oid, value) VALUES ("%d", "%d")', $form_state['values']['oid'], $form_state['values']['hosting_quota_value']);
+  }
+
+  // We are creating a new option
   else {
     $oid = db_result(db_query('SELECT MAX(oid) FROM {uc_attribute_options}'));
-    db_query('INSERT INTO {hosting_uc_quota_options} (oid, value) VALUES ("%d", "%d")', $oid , $form_state['values']['hosting_quota_value']);
-  }
+    db_query('INSERT INTO {hosting_uc_quota_options} (oid, value) VALUES ("%d", "%d")', $oid, $form_state['values']['hosting_quota_value']);
+ }
 }
 

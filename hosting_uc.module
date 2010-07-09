@@ -42,7 +42,7 @@ function hosting_uc_order ($op, &$arg1, $arg2) {
         foreach ($arg1->products as $product) {
           if (_hosting_uc_has_feature ($product)) {
             // Create the appropriate client based on the purchasers billing info
-            _hosting_uc_add_client($arg1);
+            _hosting_uc_add_client($arg1, $product);
           }
         }
       }
@@ -175,11 +175,11 @@ function _hosting_uc_has_feature ($product) {
 /**
  * Create a client
  */
-function _hosting_uc_add_client ($order) {
+function _hosting_uc_add_client ($order, $product) {
 
   $user = user_load(array('uid' => $order->uid));
 
-  // Construct the client object from the product
+  // Construct the client object
   $client = new stdClass();
   $client->type = 'client';
   $client->title = '';
@@ -193,14 +193,21 @@ function _hosting_uc_add_client ($order) {
   if ($order->delivery_company) {
     $client->organization = $order->delivery_company;
   }
-  else if ($product->billing_company) {
+  else if ($order->billing_company) {
     $client->organization = $order->billing_company;
   }
   else {
     $client->organization = $client->client_name;
   }
 
+  // Set up the clients quotas
   //drupal_set_message('<pre>' . var_export($product,true) . '</pre>');
+  foreach ($product->data['attributes'] as $options) {
+    if ($quota_info = db_fetch_array(db_query('SELECT q.value, a.quota FROM hosting_uc_quota_options q INNER JOIN uc_attribute_options o ON o.oid = q.oid INNER JOIN hosting_uc_quotas a ON a.aid = o.aid WHERE o.name = "%s"', $options[0]))) {
+     $quota_element = 'quota-' . $quota_info['quota'];
+     $client->$quota_element = $quota_info['value'];
+    }
+  }
 
   // Validate the node
   node_validate($client);
