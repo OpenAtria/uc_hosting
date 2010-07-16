@@ -176,18 +176,22 @@ function _hosting_uc_has_feature ($product) {
  * Create a client
  */
 function _hosting_uc_add_client ($order, $product) {
-
   $user = user_load(array('uid' => $order->uid));
 
   // Construct the client object
   $client = new stdClass();
   $client->type = 'client';
   $client->title = '';
-  $client->email = $user->mail;
-  $client->email_confirm = $user->mail;
-  $client->client_name = "{$order->delivery_first_name} {$order->delivery_last_name}";
+  $client->email = ($user->mail) ? $user->mail : $order->primary_email;
+  $client->email_confirm = $client->email;
+  if ($order->delivery_last_name && $order->delivery_first_name) {
+    $client->client_name = "{$order->delivery_first_name} {$order->delivery_last_name}";
+    $client->name = ($user->name) ? $user->name : strtolower($order->delivery_first_name);
+  } else {
+    $client->client_name = "{$order->billing_first_name} {$order->billing_last_name}";
+    $client->name = ($user->name) ? $user->name : strtolower($order->billing_first_name);
+  }
   $client->uid = $order->uid;
-  $client->name = $user->name;
 
   // Set the client organisation to something that exists
   if ($order->delivery_company) {
@@ -203,7 +207,7 @@ function _hosting_uc_add_client ($order, $product) {
   // Set up the clients quotas
   //drupal_set_message('<pre>' . var_export($product,true) . '</pre>');
   foreach ($product->data['attributes'] as $options) {
-    if ($quota_info = db_fetch_array(db_query('SELECT q.value, a.quota FROM hosting_uc_quota_options q INNER JOIN uc_attribute_options o ON o.oid = q.oid INNER JOIN hosting_uc_quotas a ON a.aid = o.aid WHERE o.name = "%s"', $options[0]))) {
+    if ($quota_info = db_fetch_array(db_query('SELECT q.value, a.quota FROM {hosting_uc_quota_options} q INNER JOIN {uc_attribute_options} o ON o.oid = q.oid INNER JOIN {hosting_uc_quotas} a ON a.aid = o.aid WHERE o.name = "%s"', $options[0]))) {
      $quota_element = 'quota-' . $quota_info['quota'];
      $client->$quota_element = $quota_info['value'];
     }
@@ -211,6 +215,8 @@ function _hosting_uc_add_client ($order, $product) {
 
   // Validate the node
   node_validate($client);
+
+  watchdog('debug', '<pre>' . var_export($client, true) . '</pre>');
 
   // Save the node
   $client->status = 1;
