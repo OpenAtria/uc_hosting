@@ -11,6 +11,15 @@ function uc_hosting_menu () {
 
   $items = array();
 
+  $items['admin/store/hosting'] = array(
+    'title' => t('Hosting Products'),
+    'description' => t('Associate products to aegir and manipulate quotas.'),
+    'page callback' => 'uc_hosting_admin',
+    'access arguments' => array('administer store'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'include/uc_hosting.admin.inc'
+  );
+
   $items['tests/hosting-uc'] = array(
     'title' => t('Ubercart integration test page'),
     'access arguments' => array('access administration pages'),
