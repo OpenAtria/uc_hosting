@@ -48,14 +48,6 @@ function uc_hosting_order ($op, &$arg1, $arg2) {
       }
       break;
 
-    case 'delete':
-      foreach ($arg1->products as $product) {
-        if (_uc_hosting_has_feature ($product)) {
-          // Undo our evil unholy things
-        }
-      }
-      break;
-
     default:
       break;
   }
