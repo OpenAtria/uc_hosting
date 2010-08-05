@@ -68,22 +68,22 @@ function _uc_hosting_admin_product_table($result, $op = 'remove') {
   }
 
   while ($row = db_fetch_object($result)) {
-    $link_items = array();
+    $link_items = '';
     switch ($op) {
       case 'remove':
-        $link_items[] = l(t('remove'), "node/{$row->nid}/edit/features/hosting/{$row->pfid}/delete", array('query' => drupal_get_destination()));
+        $link_items .= l(t('remove'), "node/{$row->nid}/edit/features/hosting/{$row->pfid}/delete", array('query' => drupal_get_destination()));
         break;
       case 'add':
-        $link_items[] = l(t('add'), "node/{$row->nid}/edit/features/hosting/add", array('query' => drupal_get_destination()));
+        $link_items .= l(t('add'), "node/{$row->nid}/edit/features/hosting/add", array('query' => drupal_get_destination()));
         break;
       default:
         return t('There was an error generating product information.');
     }
-    $link_items[] = l(t('edit'), "node/{$row->nid}/edit", array('query' => drupal_get_destination()));
+    $link_items .= ' '.l(t('edit'), "node/{$row->nid}/edit", array('query' => drupal_get_destination()));
     $rows[] = array(
       $row->title,
       $row->model,
-      theme('item_list', $link_items),
+      $link_items,
     );
   }
 
