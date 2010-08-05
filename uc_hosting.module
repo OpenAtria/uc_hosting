@@ -12,7 +12,7 @@ function uc_hosting_menu () {
   $items = array();
 
   $items['admin/store/hosting'] = array(
-    'title' => t('Hosting Products'),
+    'title' => t('Hosting'),
     'description' => t('Associate products to aegir and manipulate quotas.'),
     'page callback' => 'uc_hosting_admin',
     'access arguments' => array('administer store'),
