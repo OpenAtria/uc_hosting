@@ -75,6 +75,13 @@ function uc_hosting_schema () {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'aid' => array(
+        'description' => 'The id of the parent attribute.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'value' => array(
         'description' => 'The quota limit to assign when this option is chosen.',
         'type' => 'int',

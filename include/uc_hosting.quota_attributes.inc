@@ -76,6 +76,13 @@ function uc_hosting_form_uc_attribute_option_delete_confirm_alter (&$form) {
 }
 
 /**
+ * Alter the attribute deletion to call a clean-up function
+ */
+function uc_hosting_form_uc_attribute_delete_confirm_alter (&$form) {
+  $form['#submit'][] = 'uc_hosting_quota_delete_attribute';
+}
+
+/**
  * Validate that the submitted value is in fact an integer
  */
 function uc_hosting_quota_check_limit ($form, &$form_state) {
@@ -111,4 +118,12 @@ function uc_hosting_quota_save_limit ($form, &$form_state) {
  */
 function uc_hosting_quota_delete_limit ($form, &$form_state) {
   db_query('DELETE FROM {uc_hosting_quota_options} WHERE oid = %d', $form_state['values']['oid']);
+}
+
+/**
+ * Delete an attribute and its associated options from the uc_hosting tables
+ */
+function uc_hosting_quota_delete_attribute ($form, &$form_state) {
+  db_query('DELETE FROM {uc_hosting_quota_options} WHERE aid = %d', $form_state['values']['aid']);
+  db_query('DELETE FROM {uc_hosting_quotas} WHERE aid = %d',  $form_state['values']['aid']);
 }
