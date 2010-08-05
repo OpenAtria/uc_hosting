@@ -2,6 +2,42 @@
 // $Id$
 
 /**
+ * Function to create an attribute for a designated quota
+ *
+ * @sa hosting_quota_get
+ *
+ * @param $rname
+ *   The machine name of the resource
+ * @param $resource
+ *   An array representing a quota resource
+ * @param $ordering
+ *   A numerical value affecting the display order of attributes
+ */
+function uc_hosting_quota_create($rname, $resource = NULL, $ordering = 0) {
+  if (!is_array($resource)) {
+    $resource = hosting_quota_get($rname);
+  }
+
+  // This is a one table operation so lets just insert the data directly into the table
+  if (!$attr_id = db_result(db_query('SELECT a.aid FROM {uc_attributes} a INNER JOIN {uc_hosting_quotas} u ON a.aid = u.aid WHERE u.quota = "%s"', $rname))) {
+    db_query("INSERT INTO {uc_attributes} (name, label, ordering, required, display, description)
+      VALUES ('%s', '%s', %d, %d, %d, '%s')",
+      $rname,
+      $resource['title'],
+      $ordering,
+      1,
+      1,
+      $resource['description']);
+
+    // Determine the attribute id for the resource
+    $attr_id = db_result(db_query('SELECT a.aid FROM {uc_attributes} a WHERE a.name = "%s"', $rname));
+
+    db_query('INSERT INTO {uc_hosting_quotas} (aid, quota) VALUES (%d, "%s")', $attr_id, $rname);
+  }
+
+}
+
+/**
  * Function to recurse through available quota resources
  * and create associated attributes
  */
@@ -11,32 +47,11 @@ function uc_hosting_quotas_create_attributes () {
 
   $ordering = -10;
   foreach ($all_resources as $rname => $resource) {
-
-    // Determine the attribute id for the resource
-    $attr_id = db_result(db_query('SELECT a.aid FROM {uc_attributes} a WHERE a.name = "%s"', $rname));
-
-    // This is a one table operation so lets just insert the data directly into the table
-    if (!$attr_id) {
-      db_query("INSERT INTO {uc_attributes} (name, label, ordering, required, display, description)
-        VALUES ('%s', '%s', %d, %d, %d, '%s')",
-        $rname,
-        $resource['title'],
-        $ordering,
-        1,
-        1,
-        $resource['description']);
-
-      // Determine the attribute id for the resource
-      $attr_id = db_result(db_query('SELECT a.aid FROM {uc_attributes} a WHERE a.name = "%s"', $rname));
-
-      db_query('INSERT INTO {uc_hosting_quotas} (aid, quota) VALUES (%d, "%s")', $attr_id, $rname);
-    }
-
-    // Increment the ordering
+    uc_hosting_quota_create($rname, $resource, $ordering);
     $ordering++;
   }
 
-  return 'hiya';
+  return '';
 }
 
 /**
