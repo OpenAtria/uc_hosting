@@ -68,6 +68,14 @@ function uc_hosting_form_uc_attribute_option_form_alter (&$form) {
 }
 
 /**
+ * Alter the option deletion form to call our clean-up function
+ */
+function uc_hosting_form_uc_attribute_option_delete_confirm_alter (&$form) {
+  $form['#submit'][] = 'uc_hosting_quota_delete_limit';
+  // drupal_set_message('<pre>' . var_export($form, true) . '</pre>');
+}
+
+/**
  * Validate that the submitted value is in fact an integer
  */
 function uc_hosting_quota_check_limit ($form, &$form_state) {
@@ -98,3 +106,9 @@ function uc_hosting_quota_save_limit ($form, &$form_state) {
  }
 }
 
+/**
+ * Delete a limit on option delete
+ */
+function uc_hosting_quota_delete_limit ($form, &$form_state) {
+  db_query('DELETE FROM {uc_hosting_quota_options} WHERE oid = %d', $form_state['values']['oid']);
+}
