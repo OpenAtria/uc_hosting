@@ -5,7 +5,7 @@
  * Function to recurse through available quota resources
  * and create associated attributes
  */
-function hosting_uc_quotas_create_attributes () {
+function uc_hosting_quotas_create_attributes () {
 
   $all_resources = module_invoke_all('hosting_quota_resource');
 
@@ -29,7 +29,7 @@ function hosting_uc_quotas_create_attributes () {
       // Determine the attribute id for the resource
       $attr_id = db_result(db_query('SELECT a.aid FROM {uc_attributes} a WHERE a.name = "%s"', $rname));
 
-      db_query('INSERT INTO {hosting_uc_quotas} (aid, quota) VALUES (%d, "%s")', $attr_id, $rname);
+      db_query('INSERT INTO {uc_hosting_quotas} (aid, quota) VALUES (%d, "%s")', $attr_id, $rname);
     }
 
     // Increment the ordering
@@ -42,7 +42,7 @@ function hosting_uc_quotas_create_attributes () {
 /**
  * Alter the option form to include a field for setting the numerical quota
  */
-function hosting_uc_form_uc_attribute_option_form_alter (&$form) {
+function uc_hosting_form_uc_attribute_option_form_alter (&$form) {
 
   $attribute = uc_attribute_load ($form['aid']['#value']);
 
@@ -55,22 +55,22 @@ function hosting_uc_form_uc_attribute_option_form_alter (&$form) {
       '#description' => 'Integer: ' . $attribute->description,
     );
 
-    if ($limit = db_result(db_query('SELECT value FROM {hosting_uc_quota_options} WHERE oid = %d', $form['oid']['#value']))) {
+    if ($limit = db_result(db_query('SELECT value FROM {uc_hosting_quota_options} WHERE oid = %d', $form['oid']['#value']))) {
       $form['hosting_quota_value']['#default_value'] = $limit;
     }
     else {
       $form['hosting_quota_value']['#default_value'] = variable_get("hosting_quota_default_{$attribute->name}", 0);
     }
 
-    $form['#validate'][] = 'hosting_uc_quota_check_limit';
-    $form['#submit'][] = 'hosting_uc_quota_save_limit';
+    $form['#validate'][] = 'uc_hosting_quota_check_limit';
+    $form['#submit'][] = 'uc_hosting_quota_save_limit';
   }
 }
 
 /**
  * Validate that the submitted value is in fact an integer
  */
-function hosting_uc_quota_check_limit ($form, &$form_state) {
+function uc_hosting_quota_check_limit ($form, &$form_state) {
   $form_state['values']['hosting_quota_value'] = (int) $form_state['values']['hosting_quota_value'];
   if (!is_int($form_state['values']['hosting_quota_value'])) {
     form_set_error('hosting_quota_value', 'You must input an integer as quota value.');
@@ -80,21 +80,21 @@ function hosting_uc_quota_check_limit ($form, &$form_state) {
 /**
  * Save the new limit
  */
-function hosting_uc_quota_save_limit ($form, &$form_state) {
+function uc_hosting_quota_save_limit ($form, &$form_state) {
   // There is already a quota value for this option
-  if ($oid = db_result(db_query('SELECT oid FROM {hosting_uc_quota_options} WHERE oid = %d', $form['oid']['#value']))) {
-    db_query('UPDATE {hosting_uc_quota_options} SET value = %d WHERE oid = %d', $oid, $form_state['values']['hosting_quota_value']);
+  if ($oid = db_result(db_query('SELECT oid FROM {uc_hosting_quota_options} WHERE oid = %d', $form['oid']['#value']))) {
+    db_query('UPDATE {uc_hosting_quota_options} SET value = %d WHERE oid = %d', $oid, $form_state['values']['hosting_quota_value']);
   }
 
   // We are modifying an existing option without a quota value
   else if ($form_state['values']['oid']) {
-    db_query('INSERT INTO {hosting_uc_quota_options} (oid, value) VALUES ("%d", "%d")', $form_state['values']['oid'], $form_state['values']['hosting_quota_value']);
+    db_query('INSERT INTO {uc_hosting_quota_options} (oid, value) VALUES ("%d", "%d")', $form_state['values']['oid'], $form_state['values']['hosting_quota_value']);
   }
 
   // We are creating a new option
   else {
     $oid = db_result(db_query('SELECT MAX(oid) FROM {uc_attribute_options}'));
-    db_query('INSERT INTO {hosting_uc_quota_options} (oid, value) VALUES ("%d", "%d")', $oid, $form_state['values']['hosting_quota_value']);
+    db_query('INSERT INTO {uc_hosting_quota_options} (oid, value) VALUES ("%d", "%d")', $oid, $form_state['values']['hosting_quota_value']);
  }
 }
 

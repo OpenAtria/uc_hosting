@@ -9,11 +9,11 @@
 /**
  * Imp of hook_schema
  */
-function hosting_uc_schema () {
+function uc_hosting_schema () {
   $schema = array();
 
 
-  $schema['hosting_uc_products'] = array(
+  $schema['uc_hosting_products'] = array(
     'description' => 'Maps aegir product features to a specific hosting client',
     'fields' => array(
       'hpid' => array(
@@ -39,7 +39,7 @@ function hosting_uc_schema () {
     'primary key' => array('hpid'),
   );
 
-  $schema['hosting_uc_quotas'] = array(
+  $schema['uc_hosting_quotas'] = array(
     'description' => 'Maps quotas to a specific attribute',
     'fields' => array(
       'qid' => array(
@@ -65,7 +65,7 @@ function hosting_uc_schema () {
     'primary key' => array('qid'),
   );
 
-  $schema['hosting_uc_quota_options'] = array(
+  $schema['uc_hosting_quota_options'] = array(
     'description' => 'Stores integer values associated to options.',
     'fields' => array(
       'oid' => array(
@@ -91,15 +91,15 @@ function hosting_uc_schema () {
 /**
  * Imp of hook_install
  */
-function hosting_uc_install () {
-  drupal_install_schema('hosting_uc');
+function uc_hosting_install () {
+  drupal_install_schema('uc_hosting');
 }
 
 /**
  * Imp of hook_uninstall
  */
-function hosting_uc_uninstall () {
-  drupal_uninstall_schema('hosting_uc');
+function uc_hosting_uninstall () {
+  drupal_uninstall_schema('uc_hosting');
 }
 
 ?>

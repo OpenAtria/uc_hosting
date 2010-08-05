@@ -2,30 +2,30 @@
 // $Id$
 
 // This file sets up the environment for attributes to live in
-include_once (drupal_get_path('module', 'hosting_uc') . '/include/hosting_uc.quota_attributes.inc');
+include_once (drupal_get_path('module', 'uc_hosting') . '/include/uc_hosting.quota_attributes.inc');
 
 /**
  * Implementation of hook menu
  */
-function hosting_uc_menu () {
+function uc_hosting_menu () {
 
   $items = array();
 
   $items['tests/hosting-uc'] = array(
     'title' => t('Ubercart integration test page'),
     'access arguments' => array('access administration pages'),
-    'page callback' => 'hosting_uc_test_page',
+    'page callback' => 'uc_hosting_test_page',
     'type' => MENU_NORMAL_ITEM,
   );
 
   return $items;
 }
 
-function hosting_uc_test_page () {
+function uc_hosting_test_page () {
   $output = '';
-  $output .= hosting_uc_quotas_create_attributes();
-  include_once(drupal_get_path('module', 'hosting_uc') . '/include/hosting_uc.products.inc');
-  $output .= hosting_uc_products_add_product();
+  $output .= uc_hosting_quotas_create_attributes();
+  include_once(drupal_get_path('module', 'uc_hosting') . '/include/uc_hosting.products.inc');
+  $output .= uc_hosting_products_add_product();
   return $output;
 }
 
@@ -34,15 +34,15 @@ function hosting_uc_test_page () {
  *
  * Actions to take on the creation or deletion of an order involving an aegir product
  */
-function hosting_uc_order ($op, &$arg1, $arg2) {
+function uc_hosting_order ($op, &$arg1, $arg2) {
   switch ($op) {
 
     case 'update':
       if ($arg2 == 'completed') {
         foreach ($arg1->products as $product) {
-          if (_hosting_uc_has_feature ($product)) {
+          if (_uc_hosting_has_feature ($product)) {
             // Create the appropriate client based on the purchasers billing info
-            $user = _hosting_uc_add_client($arg1, $product);
+            $user = _uc_hosting_add_client($arg1, $product);
           }
         }
       }
@@ -50,7 +50,7 @@ function hosting_uc_order ($op, &$arg1, $arg2) {
 
     case 'delete':
       foreach ($arg1->products as $product) {
-        if (_hosting_uc_has_feature ($product)) {
+        if (_uc_hosting_has_feature ($product)) {
           // Undo our evil unholy things
         }
       }
@@ -65,13 +65,13 @@ function hosting_uc_order ($op, &$arg1, $arg2) {
 /**
  * Implementation of hook_product_feature().
  */
-function hosting_uc_product_feature () {
+function uc_hosting_product_feature () {
   $features[] = array(
     'id' => 'hosting',
     'title' => t('Integration with hosting'),
-    'callback' => 'hosting_uc_feature_form',
-    'delete' => 'hosting_uc_feature_delete',
-    'settings' => 'hosting_uc_feature_settings',
+    'callback' => 'uc_hosting_feature_form',
+    'delete' => 'uc_hosting_feature_delete',
+    'settings' => 'uc_hosting_feature_settings',
   );
 
   return $features;
@@ -80,11 +80,11 @@ function hosting_uc_product_feature () {
 /**
  * Callback to add the form on the product feature page
  */
-function hosting_uc_feature_form ($form_state, $node, $feature) {
+function uc_hosting_feature_form ($form_state, $node, $feature) {
   $form = array();
 
   if (!empty($feature)) {
-    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_aegir_products} WHERE pfid = %d", $feature['pfid']));
+    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
   }
 
     // Grab all the models on this product.
@@ -105,14 +105,14 @@ function hosting_uc_feature_form ($form_state, $node, $feature) {
  * Validation for the feature form
  */
 
-function hosting_uc_feature_form_validate ($form, &$form_state) {
+function uc_hosting_feature_form_validate ($form, &$form_state) {
 
 }
 
 /**
  * Submit the feature settings
  */
-function hosting_uc_feature_form_submit ($form, &$form_state) {
+function uc_hosting_feature_form_submit ($form, &$form_state) {
 
   $hosting_product = array(
     'pfid' => $form_state['values']['pfid'],
@@ -135,7 +135,7 @@ function hosting_uc_feature_form_submit ($form, &$form_state) {
     $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
   }
 
-  $hosting_product['hpid'] = db_result(db_query("SELECT hpid FROM {hosting_uc_products} WHERE pfid = %d", $hosting_product['pfid']));
+  $hosting_product['hpid'] = db_result(db_query("SELECT hpid FROM {uc_hosting_products} WHERE pfid = %d", $hosting_product['pfid']));
 
   // We will use this to write to the right place in our products table
   if ($hosting_product['hpid']) {
@@ -145,20 +145,20 @@ function hosting_uc_feature_form_submit ($form, &$form_state) {
     $key = NULL;
   }
 
-  drupal_write_record ('hosting_uc_products', $hosting_product, $key);
+  drupal_write_record ('uc_hosting_products', $hosting_product, $key);
 }
 
 /**
  * Callback to delete the feature
  */
-function hosting_uc_feature_delete ($feature) {
-  db_query("DELETE FROM {uc_aegir_products} WHERE pfid = %d", $feature['pfid']);
+function uc_hosting_feature_delete ($feature) {
+  db_query("DELETE FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']);
 }
 
 /**
  * Placeholder for an eventual feature settings form
  */
-function hosting_uc_feature_settings () {
+function uc_hosting_feature_settings () {
   $form = array();
   return $form;
 }
@@ -167,7 +167,7 @@ function hosting_uc_feature_settings () {
  * We need to make sure that users created this way in the aegir system
  * get the aegir client role
  *//*
-function hosting_uc_user ($op, &$edit, &$account) {
+function uc_hosting_user ($op, &$edit, &$account) {
   switch ($op) {
     case 'insert':
       drupal_set_message ('<pre>' . hosting_get_client_by_email($edit['mail']) . '</pre>');
@@ -189,15 +189,15 @@ function hosting_uc_user ($op, &$edit, &$account) {
  * Return TRUE if the given product (from an order) has the aegir feature
  * and also a correct SKU.
  */
-function _hosting_uc_has_feature ($product) {
-  $pfid = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {hosting_uc_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting' AND pf.nid = %d AND (hp.model = '' OR hp.model = '%s')", $product->nid, $product->model));
+function _uc_hosting_has_feature ($product) {
+  $pfid = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting' AND pf.nid = %d AND (hp.model = '' OR hp.model = '%s')", $product->nid, $product->model));
   return $pfid;
 }
 
 /**
  * Create a client
  */
-function _hosting_uc_add_client ($order, $product) {
+function _uc_hosting_add_client ($order, $product) {
   $user = user_load(array('uid' => $order->uid));
 
   // Construct the client object
@@ -243,7 +243,7 @@ function _hosting_uc_add_client ($order, $product) {
 
   // Set up the clients quotas
   foreach ($product->data['attributes'] as $options) {
-    if ($quota_info = db_fetch_array(db_query('SELECT q.value, a.quota FROM {hosting_uc_quota_options} q INNER JOIN {uc_attribute_options} o ON o.oid = q.oid INNER JOIN {hosting_uc_quotas} a ON a.aid = o.aid WHERE o.name = "%s"', $options[0]))) {
+    if ($quota_info = db_fetch_array(db_query('SELECT q.value, a.quota FROM {uc_hosting_quota_options} q INNER JOIN {uc_attribute_options} o ON o.oid = q.oid INNER JOIN {uc_hosting_quotas} a ON a.aid = o.aid WHERE o.name = "%s"', $options[0]))) {
      hosting_quota_set_limit ($client->nid, $quota_info['quota'], $quota_info['value']);
     }
   }
