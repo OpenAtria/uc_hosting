@@ -13,6 +13,13 @@ function uc_hosting_admin () {
 }
 
 /**
+ * Callback for the quota attribute administration
+ */
+function uc_hosting_admin_quotas () {
+  return '';
+}
+
+/**
  * Display a list of products with & without the uc_hosting feature
  */
 function uc_hosting_admin_list_products () {

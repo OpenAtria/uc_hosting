@@ -20,6 +20,31 @@ function uc_hosting_menu () {
     'file' => 'include/uc_hosting.admin.inc'
   );
 
+  $items['admin/store/hosting/products'] = array(
+    'title' => t('List Hosting Products'),
+    'description' => t('Listing of all hosting products'),
+    'access arguments' => array('administer store'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'file' => 'include/uc_hosting.admin.inc',
+  );
+
+  $items['admin/store/hosting/quotas'] = array(
+    'title' => t('Hosting Quota Attributes'),
+    'description' => t('Manage and generate quota attributes.'),
+    'page callback' => 'uc_hosting_admin_quotas',
+    'access arguments' => array('administer attributes'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'include/uc_hosting.admin.inc'
+  );
+
+  $items['admin/store/hosting/quota/create/%rname'] = array(
+    'title' => t('Create a quota attribute'),
+    'page callback' => 'uc_hosting_quota_create',
+    'page arguments' => array(1),
+    'access arguments' => array('administer attributes'),
+    'type' => MENU_CALLBACK,
+  );
+
   $items['tests/hosting-uc'] = array(
     'title' => t('Ubercart integration test page'),
     'access arguments' => array('access administration pages'),
