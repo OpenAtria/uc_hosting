@@ -1,5 +1,5 @@
 ; $Id$
-name = "Hosting Ubercart Products"
+name = "Hosting Products"
 description = "Define content types and products for hosting"
 core = 6.x
 package = "Hosting"
