@@ -2,7 +2,7 @@
 // $Id$
 
 // This file sets up the environment for attributes to live in
-include_once (drupal_get_path('module', 'uc_hosting') . '/include/uc_hosting.quota_attributes.inc');
+include_once (drupal_get_path('module', 'uc_hosting') . '/include/uc_hosting.attributes.inc');
 
 /**
  * Implementation of hook_help
@@ -78,7 +78,7 @@ function uc_hosting_menu () {
     'page arguments' => array(5),
     'access arguments' => array('administer attributes'),
     'type' => MENU_CALLBACK,
-    'file' => 'include/uc_hosting.quota_attributes.inc'
+    'file' => 'include/uc_hosting.attributes.inc'
   );
 
   $items['admin/store/hosting/product-classses/create/%'] = array(
@@ -101,11 +101,7 @@ function uc_hosting_menu () {
 }
 
 function uc_hosting_test_page () {
-  $output = '';
-  $output .= uc_hosting_quotas_create_attributes();
-  include_once(drupal_get_path('module', 'uc_hosting') . '/include/uc_hosting.products.inc');
-  $output .= uc_hosting_products_add_product();
-  return $output;
+  return '';
 }
 
 /**
