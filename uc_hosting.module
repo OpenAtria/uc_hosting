@@ -26,6 +26,7 @@ function uc_hosting_menu () {
     'access arguments' => array('administer store'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'file' => 'include/uc_hosting.admin.inc',
+    'weight' => -2,
   );
 
   $items['admin/store/hosting/quotas'] = array(
@@ -34,16 +35,27 @@ function uc_hosting_menu () {
     'page callback' => 'uc_hosting_admin_quotas',
     'access arguments' => array('administer attributes'),
     'type' => MENU_LOCAL_TASK,
-    'file' => 'include/uc_hosting.admin.inc'
+    'file' => 'include/uc_hosting.admin.inc',
+    'weight' => 2
   );
 
   $items['admin/store/hosting/quotas/create/%'] = array(
-    'title' => t('Create a quota attribute'),
+    'title' => t('Create Quota Attributes'),
     'page callback' => 'uc_hosting_quota_create',
     'page arguments' => array(5),
     'access arguments' => array('administer attributes'),
     'type' => MENU_CALLBACK,
     'file' => 'include/uc_hosting.quota_attributes.inc'
+  );
+
+  $items['admin/store/hosting/product-classes'] = array(
+    'title' => t('Demo Product Classes'),
+    'description' => t('Import demo product classes'),
+    'page callback' => 'uc_hosting_admin_product_classes',
+    'access arguments' => array('administer store'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'include/uc_hosting.admin.inc',
+    'weight' => 6
   );
 
   $items['tests/hosting-uc'] = array( // TODO Delete me after I'm unnecessary

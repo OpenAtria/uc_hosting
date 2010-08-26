@@ -72,6 +72,13 @@ function uc_hosting_admin_list_products () {
 }
 
 /**
+ * Callback for the product classes page
+ */
+function uc_hosting_admin_product_classes() {
+  return '';
+}
+
+/**
  * Helper function to generate product lists for uc_hostings admin page
  *
  * @param $result
