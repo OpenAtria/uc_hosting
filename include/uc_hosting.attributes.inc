@@ -116,6 +116,7 @@ function uc_hosting_form_uc_attribute_option_form_alter (&$form) {
  */
 function uc_hosting_form_uc_attribute_option_delete_confirm_alter (&$form) {
   $form['#submit'][] = 'uc_hosting_quota_delete_limit';
+  $form['#submit'][] = 'uc_hosting_delete_platform_option';
   // drupal_set_message('<pre>' . var_export($form, true) . '</pre>');
 }
 
@@ -177,6 +178,13 @@ function uc_hosting_quota_save_limit ($form, &$form_state) {
     $oid = db_result(db_query('SELECT MAX(oid) FROM {uc_attribute_options}'));
     db_query('INSERT INTO {uc_hosting_quota_options} (oid, value) VALUES ("%d", "%d")', $oid, $form_state['values']['hosting_quota_value']);
  }
+}
+
+/**
+ * Delete a platform option
+ */
+function uc_hosting_delete_platform_option ($form, &$form_state) {
+  db_query('DELETE FROM {uc_hosting_platform_options} WHERE oid = %d', $form_state['values']['oid']);
 }
 
 /**
