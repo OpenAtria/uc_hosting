@@ -67,26 +67,47 @@ function uc_hosting_quotas_create_attributes () {
  */
 function uc_hosting_form_uc_attribute_option_form_alter (&$form) {
 
-  $attribute = uc_attribute_load ($form['aid']['#value']);
+  $platform_aid = variable_get('uc_hosting_platforms_attribute', db_result(db_query('SELECT a.aid FROM {uc_attributes} a WHERE a.name = "%s"', 'platforms')));
 
-  if ($resource = hosting_quota_get($attribute->name)) {
-    $form['hosting_quota_value'] = array(
-      '#type' => 'textfield',
-      '#title' => 'Value to assign to the quota',
-      '#required' => TRUE,
-      '#size' => 60,
-      '#description' => 'Integer: ' . $attribute->description,
+  switch ($form['aid']['#value']) {
+
+  // For options belonging to the platform attribute
+  case $platform_aid:
+    $platform_options = _hosting_get_enabled_platforms();
+ 
+    $form['uc_hosting_platform'] = array(
+      '#type' => 'select',
+      '#title' => t('Aegir Platform'), 
+      '#options' => $platform_options, 
+      '#description' => t('Choose a platform to be included in this option.')
     );
 
-    if ($limit = db_result(db_query('SELECT value FROM {uc_hosting_quota_options} WHERE oid = %d', $form['oid']['#value']))) {
-      $form['hosting_quota_value']['#default_value'] = $limit;
-    }
-    else {
-      $form['hosting_quota_value']['#default_value'] = variable_get("hosting_quota_default_{$attribute->name}", 0);
-    }
+    $form['#submit'][] = 'uc_hosting_save_platform_option';
+    break;
 
-    $form['#validate'][] = 'uc_hosting_quota_check_limit';
-    $form['#submit'][] = 'uc_hosting_quota_save_limit';
+  default:
+    $attribute = uc_attribute_load ($form['aid']['#value']);
+
+    if ($resource = hosting_quota_get($attribute->name)) {
+      $form['hosting_quota_value'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Value to assign to the quota',
+        '#required' => TRUE,
+        '#size' => 60,
+        '#description' => 'Integer: ' . $attribute->description,
+      );
+
+      if ($limit = db_result(db_query('SELECT value FROM {uc_hosting_quota_options} WHERE oid = %d', $form['oid']['#value']))) {
+        $form['hosting_quota_value']['#default_value'] = $limit;
+      }
+      else {
+        $form['hosting_quota_value']['#default_value'] = variable_get("hosting_quota_default_{$attribute->name}", 0);
+      }
+
+      $form['#validate'][] = 'uc_hosting_quota_check_limit';
+      $form['#submit'][] = 'uc_hosting_quota_save_limit';
+    }
+    break;
   }
 }
 
@@ -113,6 +134,28 @@ function uc_hosting_quota_check_limit ($form, &$form_state) {
   if (!is_int($form_state['values']['hosting_quota_value'])) {
     form_set_error('hosting_quota_value', 'You must input an integer as quota value.');
   }
+}
+
+/**
+ * Save a platform option
+ */
+function uc_hosting_save_platform_option ($form, &$form_state) {
+
+  // There is already a quota value for this option
+  if ($oid = db_result(db_query('SELECT oid FROM {uc_hosting_platform_options} WHERE oid = %d', $form['oid']['#value']))) {
+    db_query('UPDATE {uc_hosting_platform_options} SET platform = %d WHERE oid = %d', $oid, $form_state['values']['uc_hosting_platform']);
+  }
+
+  // We are modifying an existing option without a quota value
+  else if ($form_state['values']['oid']) {
+    db_query('INSERT INTO {uc_hosting_platform_options} (oid, platform) VALUES ("%d", "%d")', $form_state['values']['oid'], $form_state['values']['uc_hosting_platform']);
+  }
+
+  // We are creating a new option
+  else {
+    $oid = db_result(db_query('SELECT MAX(oid) FROM {uc_attribute_options}'));
+    db_query('INSERT INTO {uc_hosting_platform_options} (oid, platform) VALUES ("%d", "%d")', $oid, $form_state['values']['uc_hosting_platform']);
+ }
 }
 
 /**

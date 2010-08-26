@@ -113,10 +113,11 @@ function uc_hosting_schema () {
         'default' => 0,
       ),
       'platform' => array(
-        'description' => 'The platform associated to this option.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
+        'description' => 'The platform nid associated to this option.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
       ),
     ),
     'indexes' => array(
