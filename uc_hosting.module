@@ -231,28 +231,6 @@ function uc_hosting_feature_settings () {
 }
 
 /**
- * We need to make sure that users created this way in the aegir system
- * get the aegir client role
- *//*
-function uc_hosting_user ($op, &$edit, &$account) {
-  switch ($op) {
-    case 'insert':
-      drupal_set_message ('<pre>' . hosting_get_client_by_email($edit['mail']) . '</pre>');
-      $client_role = _hosting_client_get_role();
-
-      if (!in_array($client_role, array_keys($edit['roles'])) && hosting_get_client_by_email($edit['mail'])) {
-        $edit['roles'][$client_role] = $client_role;
-      }
-      break;
-    default:
-      break;
-  }
-
-}
-
-
-
-/**
  * Return TRUE if the given product (from an order) has the aegir feature
  * and also a correct SKU.
  */
@@ -300,8 +278,6 @@ function _uc_hosting_add_client ($order, $product) {
   // Validate the node
   node_validate($client);
 
-  //watchdog('debug', '<pre>' . var_export($client, true) . '</pre>');
-
   // Save the node
   $client->status = 1;
   node_save($client);
@@ -310,8 +286,17 @@ function _uc_hosting_add_client ($order, $product) {
 
   // Set up the clients quotas
   foreach ($product->data['attributes'] as $options) {
-    if ($quota_info = db_fetch_array(db_query('SELECT q.value, a.quota FROM {uc_hosting_quota_options} q INNER JOIN {uc_attribute_options} o ON o.oid = q.oid INNER JOIN {uc_hosting_quotas} a ON a.aid = o.aid WHERE o.name = "%s"', $options[0]))) {
-     hosting_quota_set_limit ($client->nid, $quota_info['quota'], $quota_info['value']);
+    foreach ($options as $option) {
+      if ($option_info = db_fetch_array(db_query('SELECT q.value, a.quota, p.platform, o.oid FROM {uc_attribute_options} o LEFT JOIN {uc_hosting_quota_options} q ON o.oid = q.oid LEFT JOIN {uc_hosting_quotas} a ON a.aid = o.aid LEFT JOIN {uc_hosting_platform_options} p ON p.oid = o.oid WHERE o.name = "%s"', $option))) {
+
+       if ($option_info['quota']) {
+         hosting_quota_set_limit ($client->nid, $option_info['quota'], $option_info['value']);
+       }
+
+       else if ($option_info['platform']) {
+          db_query('INSERT INTO {hosting_platform_client_access} (pid, cid) VALUES (%d, %d)', $option_info['platform'], $client->nid);
+        }
+      }
     }
   }
 
