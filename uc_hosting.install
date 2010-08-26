@@ -12,7 +12,6 @@
 function uc_hosting_schema () {
   $schema = array();
 
-
   $schema['uc_hosting_products'] = array(
     'description' => 'Maps aegir product features to a specific hosting client',
     'fields' => array(
@@ -84,10 +83,36 @@ function uc_hosting_schema () {
       ),
       'value' => array(
         'description' => 'The quota limit to assign when this option is chosen.',
+        'type' => 'varchar',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+  );
+
+  $schema['uc_hosting_platform_options'] = array(
+    'description' => 'Stores platform associations to options.',
+    'fields' => array(
+      'oid' => array(
+        'description' => 'The value from {uc_attribute_options}.oid.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
+      ),
+      'aid' => array(
+        'description' => 'The id of the parent attribute.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'platform' => array(
+        'description' => 'The platform associated to this option.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
       ),
     ),
   );
