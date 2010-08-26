@@ -75,8 +75,15 @@ function uc_hosting_admin_list_products () {
  * Callback for the product classes page
  */
 function uc_hosting_admin_product_classes() {
-  $product_dir = drupal_get_path('module', 'uc_hosting') . '/products';
-  return '';
+  $product_classes = array(
+    'multisite' => array(
+      'title' => 'Multiple sites',
+      'href' => 'admin/store/hosting/product-classses/create/uc_hosting.multisite',
+      'query' => drupal_get_destination()
+    )
+  );
+  $message = t('This page is presently a static list of crude scripts designed to set up demo product classes. It is a placeholder for an eventual import/export feature, but for now you can use it to deploy some basic examples of what this module can allow you to do.');
+  return $message . theme('links', $product_classes);
 }
 
 /**
@@ -92,10 +99,9 @@ function uc_hosting_add_product_class ($product = 'uc_hosting.multisite') {
   $product_dir = drupal_get_path('module', 'uc_hosting') . '/products';
   if (file_check_location("/{$product_dir}/{$product_file}", "/{$product_dir}")) {
     include_once("{$product_dir}/{$product_file}");
-    return t("Imported @product", array('@product' => $product));
+    drupal_set_message (t("Imported @product", array('@product' => $product)));
   }
-
-  return FALSE;
+  drupal_goto();
 }
 
 
