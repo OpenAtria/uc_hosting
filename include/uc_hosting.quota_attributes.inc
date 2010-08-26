@@ -32,9 +32,17 @@ function uc_hosting_quota_create($rname, $resource = NULL, $ordering = 0) {
     // Determine the attribute id for the resource
     $attr_id = db_result(db_query('SELECT a.aid FROM {uc_attributes} a WHERE a.name = "%s"', $rname));
 
-    db_query('INSERT INTO {uc_hosting_quotas} (aid, quota) VALUES (%d, "%s")', $attr_id, $rname);
+    if (db_query('INSERT INTO {uc_hosting_quotas} (aid, quota) VALUES (%d, "%s")', $attr_id, $rname)) {
+      drupal_set_message (t('Attribute created for @quota', array('@quota' => $resource['title'])));
+    } else {
+      drupal_set_message (t('Error creating attribute for @quota', array('@quota' => $resource['title'])), 'error');
+      watchdog ('uc_hosting', 'Error creating attribute for @quota: @error', array('@quota' => $resource['title'], '@error' => db_error()), WATCHDOG_ERROR);
+    }
   }
-
+  else {
+    watchdog('uc_hosting', 'Attribute creation duplicate call.');
+  }
+  drupal_goto();
 }
 
 /**

@@ -28,7 +28,7 @@ function uc_hosting_admin_quotas () {
   );
   $rows = array();
   foreach ($resources as $rname => $resource) {
-    $attribute = 'No Attribute'; // TODO This becomes a create link (also, write a create function)
+    $attribute = l(t('Create'), "admin/store/hosting/quotas/create/$rname", array('query' => drupal_get_destination())); 
     $aid = db_result(db_query('SELECT aid FROM {uc_hosting_quotas} WHERE quota = "%s"', $rname));
 
     // Conditionally generate links to attribute

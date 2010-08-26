@@ -37,15 +37,16 @@ function uc_hosting_menu () {
     'file' => 'include/uc_hosting.admin.inc'
   );
 
-  $items['admin/store/hosting/quota/create/%rname'] = array(
+  $items['admin/store/hosting/quotas/create/%'] = array(
     'title' => t('Create a quota attribute'),
     'page callback' => 'uc_hosting_quota_create',
-    'page arguments' => array(1),
+    'page arguments' => array(5),
     'access arguments' => array('administer attributes'),
     'type' => MENU_CALLBACK,
+    'file' => 'include/uc_hosting.quota_attributes.inc'
   );
 
-  $items['tests/hosting-uc'] = array(
+  $items['tests/hosting-uc'] = array( // TODO Delete me after I'm unnecessary
     'title' => t('Ubercart integration test page'),
     'access arguments' => array('access administration pages'),
     'page callback' => 'uc_hosting_test_page',
