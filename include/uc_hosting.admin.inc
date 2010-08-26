@@ -16,7 +16,34 @@ function uc_hosting_admin () {
  * Callback for the quota attribute administration
  */
 function uc_hosting_admin_quotas () {
-  return '';
+
+
+  // Get the resources
+  $resources = module_invoke_all('hosting_quota_resource');
+
+  // Build arrays for theme_tables
+  $headers = array(
+    t('Quota Resource'),
+    t('Attribute')
+  );
+  $rows = array();
+  foreach ($resources as $rname => $resource) {
+    $attribute = 'No Attribute'; // TODO This becomes a create link (also, write a create function)
+    $aid = db_result(db_query('SELECT aid FROM {uc_hosting_quotas} WHERE quota = "%s"', $rname));
+
+    // Conditionally generate links to attribute
+    if ($aid) {
+      $attribute = l(t('edit'), "admin/store/attributes/$aid/edit", array('query' => drupal_get_destination())) 
+        . ' ' . l(t('options'), "admin/store/attributes/$aid/options", array('query' => drupal_get_destination())) 
+        . ' ' .l(t('delete'), "admin/store/attributes/$aid/delete", array('query' => drupal_get_destination()));
+    }
+    $rows[] = array(
+      'quota' => $resource['title'],
+      'attribute' => $attribute,
+    );
+  }
+
+  return theme('table', $headers, $rows);
 }
 
 /**
