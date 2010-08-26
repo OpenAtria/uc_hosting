@@ -27,7 +27,7 @@ $form_state = array();
 
 
 /**
- * STEP TWO - Generate attributes and assign them options
+ * STEP TWO - Generate options
  * This assumes we have already generated the quota attributes
  ******************************************************************/
 include_once (drupal_get_path('module', 'uc_attribute') . '/uc_attribute.admin.inc');
