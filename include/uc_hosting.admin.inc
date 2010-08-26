@@ -75,8 +75,29 @@ function uc_hosting_admin_list_products () {
  * Callback for the product classes page
  */
 function uc_hosting_admin_product_classes() {
+  $product_dir = drupal_get_path('module', 'uc_hosting') . '/products';
   return '';
 }
+
+/**
+ * Import and run a product definition
+ *
+ * @param $product string
+ *   A string identifying which product to import
+ */
+
+function uc_hosting_add_product_class ($product = 'uc_hosting.multisite') {
+
+  $product_file = $product . '.product.inc';
+  $product_dir = drupal_get_path('module', 'uc_hosting') . '/products';
+  if (file_check_location("/{$product_dir}/{$product_file}", "/{$product_dir}")) {
+    include_once("{$product_dir}/{$product_file}");
+    return t("Imported @product", array('@product' => $product));
+  }
+
+  return FALSE;
+}
+
 
 /**
  * Helper function to generate product lists for uc_hostings admin page
