@@ -83,11 +83,15 @@ function uc_hosting_schema () {
       ),
       'value' => array(
         'description' => 'The quota limit to assign when this option is chosen.',
-        'type' => 'varchar',
+        'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
+    ),
+    'indexes' => array(
+      'oid' => array('oid'),
+      'aid' => array('aid'),
     ),
   );
 
@@ -114,6 +118,10 @@ function uc_hosting_schema () {
         'length' => 255,
         'not null' => FALSE,
       ),
+    ),
+    'indexes' => array(
+      'oid' => array('oid'),
+      'aid' => array('aid'),
     ),
   );
 
