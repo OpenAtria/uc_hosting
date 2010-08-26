@@ -7,8 +7,8 @@
 
 // Set up values for the shared hosting product class
 $form_state['values']  = array (
-  'pcid' => 'uc_hosting_shared',
-  'name' => t('Shared Aegir Hosting'),
+  'pcid' => 'uc_hosting_multi',
+  'name' => t('Multi-Site Hosting'),
   'description' => t('Shared hosting on this Aegir server. Options assume a one year subscription.'),
   'op' => 'Submit',
 );
