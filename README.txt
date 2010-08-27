@@ -1,4 +1,4 @@
-;; $Id$
+;; $Id: README.txt,v 1.1 2010/08/27 00:09:45 sfyn Exp $
 
 Aegir Ubercart Integration
 --------------------------

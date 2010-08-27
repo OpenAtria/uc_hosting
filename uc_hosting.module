@@ -1,5 +1,5 @@
 <?php
-// $Id$
+// $Id: uc_hosting.module,v 1.1 2010/08/27 00:09:45 sfyn Exp $
 
 // This file sets up the environment for attributes to live in
 include_once (drupal_get_path('module', 'uc_hosting') . '/include/uc_hosting.attributes.inc');

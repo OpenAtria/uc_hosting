@@ -1,5 +1,5 @@
 <?php
-// $Id$
+// $Id: uc_hosting.multisite.product.inc,v 1.1 2010/08/27 00:09:45 sfyn Exp $
 
 /**
  * STEP ONE - Set up the product class
