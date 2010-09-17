@@ -117,7 +117,7 @@ function uc_hosting_order ($op, &$arg1, $arg2) {
         foreach ($arg1->products as $product) {
           if (_uc_hosting_has_feature ($product)) {
             // Create the appropriate client based on the purchasers billing info
-            $user = _uc_hosting_add_client($arg1, $product);
+            $user = _uc_hosting_update_client($arg1, $product);
           }
         }
       }
@@ -242,7 +242,7 @@ function _uc_hosting_has_feature ($product) {
 /**
  * Create a client
  */
-function _uc_hosting_add_client ($order, $product) {
+function _uc_hosting_update_client ($order, $product) {
   $user = user_load(array('uid' => $order->uid));
 
   // Construct the client object
