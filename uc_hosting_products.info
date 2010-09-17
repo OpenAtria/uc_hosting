@@ -2,7 +2,7 @@
 name = "Aegir Ubercart Products"
 description = "Define content types and products for hosting"
 core = 6.x
-package = "Hosting"
+package = "Hosting & Ubercart Integration"
 
 dependencies[] = uc_hosting
 ; dependencies[] = uc_product
