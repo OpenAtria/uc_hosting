@@ -64,3 +64,11 @@ function uc_hosting_products_schema () {
 function uc_hosting_products_install() {
   drupal_install_schema('uc_hosting_products');
 }
+
+/**
+ * Imp of hook_uninstall
+ */
+function uc_hosting_products_uninstall () {
+  drupal_uninstall_schema('uc_hosting_products');
+}
+
