@@ -13,6 +13,6 @@ Quick start instructions:
 3. Create a product in that class
 4. Enable the hosting integration feature for that product
 
-There is a git repo at http://git.koumbit.net/?p=aegir_kt/uc_hosting.git;a=summary for the current HEAD.
+There is a git repo at http://github.com/sfyn/uc_hosting for the current HEAD.
 
 Expect more documentation soon. I promise.
