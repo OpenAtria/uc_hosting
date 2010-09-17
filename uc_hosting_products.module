@@ -6,6 +6,58 @@
  */
 
 /**
+ * Implementation of hook_order
+ *
+ * Actions to take on order changes involving an aegir product
+ *
+ * @param $op string
+ *   Provided by ubercart on invocation
+ * @param &$arg1
+ *   Different data depending on the op
+ * @param $arg2
+ *   Different data depending on the op
+ */
+function uc_hosting_products_order ($op, &$arg1, $arg2) {
+  switch ($op) {
+
+    case 'update':
+      if ($arg2 == 'completed') {
+        foreach ($arg1->products as $product) {
+          if (_uc_hosting_products_has_feature ($product)) {
+            // Make the changes necessary to the hosting infrastructure
+            $user = uc_hosting_update_client($arg1, $product, 'uc_hosting_products_client_update');
+          }
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+/**
+ * Callback for client updates
+ *
+ * @param $client
+ *   The Aegir client account
+ * @param $product
+ *   The Ubercart product
+ */
+function uc_hosting_products_client_update ($client, $product) {
+  $feature_info = db_fetch_array(db_query('SELECT * FROM {uc_hosting_products} WHERE model = "%s"', $product->model));
+  switch ($feature_info['type']) {
+    case 'platform':
+      db_query('INSERT INTO {hosting_platform_client_access} (pid, cid) VALUES (%d, %d)', $feature_info['value'], $client->nid);
+      break;
+    case 'quota-site':
+      break;
+    default:
+      break;
+  }
+}
+
+/**
  * Implementation of hook_product_feature().
  */
 function uc_hosting_products_product_feature () {
@@ -89,8 +141,11 @@ function uc_hosting_products_platform_form ($form_state, $node, $feature) {
  * Platform validation function
  */
 function uc_hosting_products_platform_form_validate($form, &$form_state) {
-  // @TODO: Need to ensure that a single platform isn't associated with
-  // more than one product.
+  // For this to work, we can have only one hosting feature per product
+  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
+  if ($check) {
+    form_set_error('model', 'Sorry, only one hosting feature per product.');
+  }
 }
 
 /**
@@ -146,4 +201,13 @@ function uc_hosting_products_platform_settings() {
  */
 function uc_hosting_products_platform_delete($feature) {
   db_query("DELETE FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']);
+}
+
+/**
+ * Return TRUE if the given product (from an order) has a hosting feature
+ * and also a correct SKU.
+ */
+function _uc_hosting_products_has_feature ($product) {
+  $pfid = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d AND (hp.model = '' OR hp.model = '%s')", $product->nid, $product->model));
+  return $pfid;
 }

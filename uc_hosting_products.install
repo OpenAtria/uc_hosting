@@ -51,6 +51,7 @@ function uc_hosting_products_schema () {
     'primary key' => array('hpid'),
     'indexes' => array(
       'pfid' => array('pfid'),
+      'model' => array('model'),
     ),
   );
 
