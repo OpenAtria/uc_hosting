@@ -35,14 +35,14 @@ function uc_hosting_products_schema () {
         'not null' => FALSE,
       ),
       'type' => array(
-        'description' => 'The feature type, either a quota resource name or the word platform.',
+        'description' => 'The feature type, either in the form "quota-resourcename" or the words "platform" or "site".',
         'type' => 'varchar',
         'length' => 255,
         'not null' => FALSE,
       ),
       'value' => array(
-        'description' => 'Either the platform nid or the quota value.'
-        'type' =>'int',
+        'description' => 'Either the platform nid or the quota value.',
+        'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
