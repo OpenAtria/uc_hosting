@@ -1,0 +1,65 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Schemas, install, and uninstall hooks
+ */
+
+/**
+ * Imp of hook_schema
+ */
+function uc_hosting_products_schema () {
+  $schema = array();
+
+  $schema['uc_hosting_products'] = array(
+    'description' => 'Maps aegir product features to a specific hosting client',
+    'fields' => array(
+      'hpid' => array(
+        'description' => 'IDs the hosting product.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'pfid' => array(
+        'description' => 'The {uc_product_features}.pfid.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'model' => array(
+        'description' => 'The product model.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'type' => array(
+        'description' => 'The feature type, either a quota resource name or the word platform.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'value' => array(
+        'description' => 'Either the platform nid or the quota value.'
+        'type' =>'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('hpid'),
+    'indexes' => array(
+      'pfid' => array('pfid'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Imp of hook_install
+ */
+function uc_hosting_products_install() {
+  drupal_install_schema('uc_hosting_products');
+}

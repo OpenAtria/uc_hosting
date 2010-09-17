@@ -12,32 +12,6 @@
 function uc_hosting_schema () {
   $schema = array();
 
-  $schema['uc_hosting_products'] = array(
-    'description' => 'Maps aegir product features to a specific hosting client',
-    'fields' => array(
-      'hpid' => array(
-        'description' => 'IDs the hosting product.',
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'pfid' => array(
-        'description' => 'The {uc_product_features}.pfid.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'model' => array(
-        'description' => 'The product model.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-      ),
-    ),
-    'primary key' => array('hpid'),
-  );
-
   $schema['uc_hosting_quotas'] = array(
     'description' => 'Maps quotas to a specific attribute',
     'fields' => array(
