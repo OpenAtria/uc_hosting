@@ -4,3 +4,146 @@
  *
  * Defines quota-based and platform based products
  */
+
+/**
+ * Implementation of hook_product_feature().
+ */
+function uc_hosting_products_product_feature () {
+  // First set the feature for the platforms
+  $features[] = array(
+    'id' => 'hosting_platform',
+    'title' => t('Access to a platform'),
+    'callback' => 'uc_hosting_products_platform_form',
+    'delete' => 'uc_hosting_products_platform_delete',
+    'settings' => 'uc_hosting_products_platform_settings',
+  );
+  // This sets the feature for quotas
+  /*
+  $features[] = array(
+    'id' = 'hosting_quota',
+    'title' => t('A given unit of a quota resource.');
+    'callback' => 'uc_hosting_products_quota_form',
+    'delete' => 'uc_hosting_products_quota_delete',
+    'settings' => 'uc_hosting_products_quota_settings'
+  );
+  */
+
+  return $features;
+}
+
+/**
+ * Callback to add the platform form on the product feature page
+ */
+function uc_hosting_products_platform_form ($form_state, $node, $feature) {
+  $form = array();
+
+  if (!empty($feature)) {
+    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
+  }
+
+  // Grab all the models on this product.
+  $models = uc_product_get_models($node);
+
+  $form['model'] = array(
+    '#type' => 'select',
+    '#title' => t('SKU'),
+    '#default_value' => $hosting_product->model,
+    '#description' => t('This is the SKU that will need to be purchased to associate the purchase with a site.'),
+    '#options' => $models,
+  );
+
+  // @see _hosting_get_platforms()
+  if (user_access('view locked platforms')) {
+    $platforms = _hosting_get_platforms();
+  }
+  else if (user_access('view platform')) {
+    $platforms = _hosting_get_enabled_platforms();
+  }
+  else {
+    $platforms = array();
+    drupal_set_message('You cannot create products for things you cannot view, fool!', 'warning');
+  }
+
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+  $form['pfid'] = array(
+    '#type' => 'value',
+    '#value' => $feature['pfid'],
+  );
+
+  $form['platform'] = array(
+    '#type' => 'select',
+    '#title' => t('Platform'),
+    '#description' => t('Select the platform to associate with this product.'),
+    '#default_value' => $hosting_product->value,
+    '#options' => $platforms,
+    '#required' => TRUE,
+  );
+
+  return uc_product_feature_form ($form);
+}
+
+/**
+ * Platform validation function
+ */
+function uc_hosting_products_platform_form_validate($form, &$form_state) {
+  // @TODO: Need to ensure that a single platform isn't associated with
+  // more than one product.
+}
+
+/**
+ * Save the product feature settings.
+ */
+function uc_hosting_products_platform_form_submit($form, &$form_state) {
+  $hosting_product = array(
+    'pfid' => $form_state['values']['pfid'],
+    'model' => $form_state['values']['model'],
+    'type' => 'platform',
+    'value' => $form_state['values']['platform'],
+  );
+
+  $platform_node = node_load($hosting_product['value']);
+  $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
+  $description .= t('<strong>Platform:</strong> !platform', array('!platform' => $platform_node->title));
+
+  $data = array(
+    'pfid' => $form_state['values']['pfid'],
+    'nid' => $form_state['values']['nid'],
+    'fid' => 'hosting_platform',
+    'description' => $description,
+  );
+
+  $form_state['redirect'] = uc_product_feature_save($data);
+
+  // Insert or update uc_hosting_products table
+  if (empty($hosting_product['pfid'])) {
+    $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
+  }
+
+  $hpid = db_result(db_query("SELECT hpid FROM {uc_hosting_products} WHERE pfid = %d", $hosting_product['pfid']));
+
+  $key = NULL;
+  if ($hpid) {
+    $key = 'hpid';
+    $hosting_product['hpid'] = $hpid;
+  }
+
+  drupal_write_record('uc_hosting_products', $hosting_product, $key);
+}
+
+/**
+ * Settings form for the platforms
+ */
+function uc_hosting_products_platform_settings() {
+  $form = array();
+  return $form;
+}
+
+/**
+ * Delete function for the platforms
+ */
+function uc_hosting_products_platform_delete($feature) {
+  db_query("DELETE FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']);
+}
