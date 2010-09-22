@@ -72,8 +72,8 @@ function uc_hosting_products_product_feature () {
   );
   // This sets the feature for quotas
   $features[] = array(
-    'id' = 'hosting_quota',
-    'title' => t('A given unit of a quota resource.');
+    'id' => 'hosting_quota',
+    'title' => t('A given unit of a quota resource.'),
     'callback' => 'uc_hosting_products_quota_form',
     'delete' => 'uc_hosting_products_feature_delete',
     'settings' => 'uc_hosting_products_quota_settings'
@@ -235,7 +235,7 @@ function uc_hosting_products_quota_form ($form_state, $node, $feature) {
   // parse the $quotas into an appropriate array for a select
   $quota_choices = array();
   foreach ($quotas as $quota => $rinfo) {
-    $quota_choices[$quota] => $rinfo['title'];
+    $quota_choices[$quota] = $rinfo['title'];
   }
 
   $form['nid'] = array(
