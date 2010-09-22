@@ -92,8 +92,9 @@ function uc_hosting_products_platform_form ($form_state, $node, $feature) {
     $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
   }
 
-  // Grab all the models on this product.
+  // Grab all the models on this product, get rid of the top -Any- option
   $models = uc_product_get_models($node);
+  array_shift($models);
 
   $form['model'] = array(
     '#type' => 'select',
