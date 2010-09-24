@@ -121,10 +121,21 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
     $client = hosting_get_client_by_email($user->mail);
     if (!$client) {
       // Create a client
-      drupal_set_message('called');
       $client = _uc_hosting_add_client($user, $order);
     }
   }
+
+    // Write an entry to the uc_hosting_orders table
+    $data = array(
+      'order_id' => $order->order_id,
+      'client_nid' => $client->nid
+    );
+    if ($oid = db_result(db_query('SELECT order_id FROM {uc_hosting_orders} WHERE order_id = %d', $order->order_id))) {
+      drupal_write_record('uc_hosting_orders', $data, 'order_id');
+    }
+    else {
+      drupal_write_record('uc_hosting_orders', $data);
+    }
 
   if (function_exists($callback)) {
     $callback($client, $product);

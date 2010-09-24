@@ -22,10 +22,9 @@ function uc_hosting_products_order ($op, &$arg1, $arg2) {
 
     case 'update':
       if ($arg2 == 'completed') {
+        dsm($arg1);
         foreach ($arg1->products as $product) {
           if (_uc_hosting_products_has_feature ($product)) {
-            // Write an entry to the uc_hosting_orders table
-            // TODO ^
             // Make the changes necessary to the hosting client
             $user = uc_hosting_update_client($arg1, $product, 'uc_hosting_products_client_update');
           }
