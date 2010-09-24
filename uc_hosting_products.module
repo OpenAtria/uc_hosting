@@ -24,6 +24,8 @@ function uc_hosting_products_order ($op, &$arg1, $arg2) {
       if ($arg2 == 'completed') {
         foreach ($arg1->products as $product) {
           if (_uc_hosting_products_has_feature ($product)) {
+            // Write an entry to the uc_hosting_orders table
+            // TODO ^
             // Make the changes necessary to the hosting client
             $user = uc_hosting_update_client($arg1, $product, 'uc_hosting_products_client_update');
           }
@@ -51,6 +53,12 @@ function uc_hosting_products_client_update ($client, $product) {
       db_query('INSERT INTO {hosting_platform_client_access} (pid, cid) VALUES (%d, %d)', $feature_info['value'], $client->nid);
       break;
     case 'site':
+      // Write the site url to uc_hosting_orders
+      // TODO ^
+      // Increment the client's site quota
+      // TODO ^
+      // Create the site
+      // TODO ^
       break;
     default:
       // TODO Once there are other quota resources to work with
