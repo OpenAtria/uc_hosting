@@ -51,7 +51,7 @@ function uc_hosting_products_client_update ($client, $product) {
     case 'platform':
       db_query('INSERT INTO {hosting_platform_client_access} (pid, cid) VALUES (%d, %d)', $feature_info['value'], $client->nid);
       break;
-    case 'site':
+    case 'sites':
       // Write the site url to uc_hosting_orders
       // TODO ^
       // Increment the client's site quota
@@ -77,13 +77,13 @@ function uc_hosting_products_product_feature () {
     'delete' => 'uc_hosting_products_feature_delete',
     'settings' => 'uc_hosting_products_platform_settings',
   );
-  // This sets the feature for quotas
+  // This sets the feature for sites
   $features[] = array(
-    'id' => 'hosting_quota',
-    'title' => t('A given unit of a quota resource.'),
-    'callback' => 'uc_hosting_products_quota_form',
+    'id' => 'hosting_site',
+    'title' => t('Create a site and adjust quotas accordingly.'),
+    'callback' => 'uc_hosting_products_site_form',
     'delete' => 'uc_hosting_products_feature_delete',
-    'settings' => 'uc_hosting_products_quota_settings'
+    'settings' => 'uc_hosting_products_site_settings'
   );
 
   return $features;
@@ -120,7 +120,7 @@ function uc_hosting_products_platform_form ($form_state, $node, $feature) {
   }
   else {
     $platforms = array();
-    drupal_set_message('You cannot create products for things you cannot view, fool!', 'warning');
+    drupal_set_message('You must have permission to access platforms to enable this feature.', 'warning');
   }
 
   $form['nid'] = array(
@@ -211,17 +211,18 @@ function uc_hosting_products_feature_delete($feature) {
 }
 
 /**
- * Callback to add the platform form on the product feature page
+ * Callback to add the site form on the product feature page
  */
-function uc_hosting_products_quota_form ($form_state, $node, $feature) {
+function uc_hosting_products_site_form ($form_state, $node, $feature) {
   $form = array();
 
   if (!empty($feature)) {
     $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
   }
 
-  // Grab all the models on this product.
+  // Grab all the models on this product, get rid of the top -Any- option
   $models = uc_product_get_models($node);
+  array_shift($models);
 
   $form['model'] = array(
     '#type' => 'select',
@@ -237,13 +238,7 @@ function uc_hosting_products_quota_form ($form_state, $node, $feature) {
   }
   else {
     $quotas = array();
-    drupal_set_message('You cannot create features quotas you cannot edit, fool!', 'warning');
-  }
-
-  // parse the $quotas into an appropriate array for a select
-  $quota_choices = array();
-  foreach ($quotas as $quota => $rinfo) {
-    $quota_choices[$quota] = $rinfo['title'];
+    drupal_set_message('You must be able to edit quotas to add this feature.', 'warning');
   }
 
   $form['nid'] = array(
@@ -256,24 +251,17 @@ function uc_hosting_products_quota_form ($form_state, $node, $feature) {
   );
 
   $form['quota'] = array(
-    '#type' => 'select',
-    '#title' => t('Platform'),
-    '#description' => t('Select the platform to associate with this product.'),
-    '#default_value' => $hosting_product->type,
-    '#options' => $quota_choices,
-    '#required' => TRUE,
-  );
-
-  $form['quota_value'] = array(
+    '#type' => 'value',
+    '#value' => 'sites',
   );
 
   return uc_product_feature_form ($form);
 }
 
 /**
- * Platform validation function
+ * Site validation function
  */
-function uc_hosting_products_quota_form_validate($form, &$form_state) {
+function uc_hosting_products_site_form_validate($form, &$form_state) {
   // For this to work, we can have only one hosting feature per product
   $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
   if ($check) {
@@ -282,24 +270,23 @@ function uc_hosting_products_quota_form_validate($form, &$form_state) {
 }
 
 /**
- * Save the product feature settings.
+ * Save the product site feature settings.
  */
-function uc_hosting_products_quota_form_submit($form, &$form_state) {
+function uc_hosting_products_site_form_submit($form, &$form_state) {
   $hosting_product = array(
     'pfid' => $form_state['values']['pfid'],
     'model' => $form_state['values']['model'],
-    'type' => 'platform',
-    'value' => $form_state['values']['platform'],
+    'type' => 'sites',
+    'value' => 0,
   );
 
-  $platform_node = node_load($hosting_product['value']);
   $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
-  $description .= t('<strong>Platform:</strong> !platform', array('!platform' => $platform_node->title));
+  $description .= t('Allows the creation of a site on product purchase.');
 
   $data = array(
     'pfid' => $form_state['values']['pfid'],
     'nid' => $form_state['values']['nid'],
-    'fid' => 'hosting_platform',
+    'fid' => 'hosting_site',
     'description' => $description,
   );
 
@@ -319,12 +306,18 @@ function uc_hosting_products_quota_form_submit($form, &$form_state) {
   }
 
   drupal_write_record('uc_hosting_products', $hosting_product, $key);
+
+  // Add the site url attribute to the product
+  $url_attr = uc_attribute_load(variable_get('uc_hosting_products_siteurl_attribute', 0));
+  if (!$result = db_result(db_query('SELECT nid FROM {uc_product_attributes} WHERE nid = %d AND aid = %d', $data['nid'], $url_attr->aid))) {
+    db_query('INSERT INTO {uc_product_attributes} (nid, aid, label, ordering, default_option, required, display) SELECT %d, aid, label, ordering, %d, required, display FROM {uc_attributes} WHERE aid = %d', $data['nid'], 0, $url_attr->aid);
+  }
 }
 
 /**
- * Settings form for the platforms
+ * Settings form for the sites
  */
-function uc_hosting_products_quota_settings() {
+function uc_hosting_products_site_settings() {
   $form = array();
   return $form;
 }
