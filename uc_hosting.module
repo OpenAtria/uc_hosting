@@ -1,9 +1,6 @@
 <?php
 // $Id: uc_hosting.module,v 1.1 2010/08/27 00:09:45 sfyn Exp $
 
-// This file sets up the environment for attributes to live in
-// include_once (drupal_get_path('module', 'uc_hosting') . '/include/uc_hosting.attributes.inc');
-
 /**
  * Implementation of hook_help
  *
@@ -34,6 +31,7 @@ function uc_hosting_menu () {
 
   $items = array();
 
+  /* Disabled the admin interface because it depends on data that is no longer available
   $items['admin/store/hosting'] = array(
     'title' => t('Hosting'),
     'description' => t('Associate products to aegir and manipulate quotas.'),
@@ -89,7 +87,7 @@ function uc_hosting_menu () {
     'type' => MENU_CALLBACK,
     'file' => 'include/uc_hosting.admin.inc'
   );
-
+  */
   $items['tests/hosting-uc'] = array( // TODO Delete me after I'm unnecessary
     'title' => t('Ubercart integration test page'),
     'access arguments' => array('access administration pages'),
