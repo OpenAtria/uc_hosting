@@ -12,91 +12,40 @@
 function uc_hosting_schema () {
   $schema = array();
 
-  $schema['uc_hosting_quotas'] = array(
-    'description' => 'Maps quotas to a specific attribute',
+  $schema['uc_hosting_orders'] = array(
+    'description' => 'Stores additional information about the orders',
     'fields' => array(
-      'qid' => array(
-        'description' => 'IDs the quota.',
-        'type' => 'serial',
+      'order_id' => array(
+        'description' => 'The unique ID of the order.',
+        'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
+        'default' => 0,
       ),
-      'aid' => array(
-        'description' => 'The {uc_attributes}.aid.',
+      'client_nid' => array(
+        'description' => 'The nid of the aegir client modified by this order.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'site_nid' => array(
+        'description' => 'The nid of the aegir site created by this order, if any.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
-        'default' => 0,
+        'default' => NULL,
       ),
-      'quota' => array(
-        'description' => 'The machine name of the quota, as it would appear in {hosting_client_quota}.resource.',
+      'site_url' => array(
+        'description' => 'The url of the site associated to this order, if any.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => FALSE,
       ),
     ),
-    'primary key' => array('qid'),
-  );
-
-  $schema['uc_hosting_quota_options'] = array(
-    'description' => 'Stores integer values associated to options.',
-    'fields' => array(
-      'oid' => array(
-        'description' => 'The value from {uc_attribute_options}.oid.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'aid' => array(
-        'description' => 'The id of the parent attribute.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'value' => array(
-        'description' => 'The quota limit to assign when this option is chosen.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-    ),
     'indexes' => array(
-      'oid' => array('oid'),
-      'aid' => array('aid'),
-    ),
-  );
-
-  $schema['uc_hosting_platform_options'] = array(
-    'description' => 'Stores platform associations to options.',
-    'fields' => array(
-      'oid' => array(
-        'description' => 'The value from {uc_attribute_options}.oid.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'aid' => array(
-        'description' => 'The id of the parent attribute.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'platform' => array(
-        'description' => 'The platform nid associated to this option.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0
-      ),
-    ),
-    'indexes' => array(
-      'oid' => array('oid'),
-      'aid' => array('aid'),
+      'order_id' => array('order_id'),
+      'client_nid' => array('client_nid'),
     ),
   );
 
