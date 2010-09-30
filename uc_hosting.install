@@ -29,18 +29,11 @@ function uc_hosting_schema () {
         'not null' => TRUE,
         'default' => 0,
       ),
-      'site_nid' => array(
-        'description' => 'The nid of the aegir site created by this order, if any.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-        'default' => NULL,
-      ),
-      'site_url' => array(
-        'description' => 'The url of the site associated to this order, if any.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
+      'order_data' => array(
+        'description' => 'Serialized data concerning the contents of this order.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
       ),
     ),
     'indexes' => array(

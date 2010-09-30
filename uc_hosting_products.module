@@ -306,12 +306,6 @@ function uc_hosting_products_site_form_submit($form, &$form_state) {
   }
 
   drupal_write_record('uc_hosting_products', $hosting_product, $key);
-
-  // Add the site url attribute to the product
-  $url_attr = uc_attribute_load(variable_get('uc_hosting_products_siteurl_attribute', 0));
-  if (!$result = db_result(db_query('SELECT nid FROM {uc_product_attributes} WHERE nid = %d AND aid = %d', $data['nid'], $url_attr->aid))) {
-    db_query('INSERT INTO {uc_product_attributes} (nid, aid, label, ordering, default_option, required, display) SELECT %d, aid, label, ordering, %d, required, display FROM {uc_attributes} WHERE aid = %d', $data['nid'], 0, $url_attr->aid);
-  }
 }
 
 /**
@@ -321,6 +315,33 @@ function uc_hosting_products_site_settings() {
   $form = array();
   return $form;
 }
+
+/**
+ * Imp of hook_uc_form_alter to get the info we need to create a site
+ *
+ * This will be called before the form is rendered, allowing us to use other modules
+ * to customize the product workflow with hook_form_alter.
+ *
+ * @param $form
+ *   The form object
+ * @param $form_state
+ *   The form with values and other changes
+ * @param $form_id
+ *   The unique identifier of the form
+ */
+function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
+
+  // Determine if the product has the site feature
+
+  // Offer the option of creating a site now or later
+
+  // Determine which platforms and install profiles are available
+
+  // Insert a field for the site url
+
+  // Insert fields to select platforms and install profiles
+}
+
 
 /**
  * Return TRUE if the given product (from an order) has a hosting feature
