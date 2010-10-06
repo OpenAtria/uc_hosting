@@ -116,6 +116,9 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
   static $client;
   $user = user_load(array('uid' => $order->uid));
 
+  // Attempt to get an existing order
+  $old_order = db_fetch_array(db_query('SELECT * FROM {uc_hosting_orders} WHERE order_id = %d', $order->order_id));
+
   if (!isset($client)) {
     // Attempt to retrieve the aegir client
     $client = hosting_get_client_by_email($user->mail);
@@ -125,26 +128,31 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
     }
   }
 
-    // Write an entry to the uc_hosting_orders table
-    $data = array(
-      'order_id' => $order->order_id,
-      'client_nid' => $client->nid
-    );
+  // Prepare the updated or new order
+  $new_order = array(
+    'order_id' => $order->order_id,
+    'client_nid' => $client->nid
+  );
+  if ($old_order) {
+    $new_order['site_url'] = $old_order['site_url'];
+    $new_order['order_data'] = unserialize($old_order['order_data']);
+  }
 
-    if (function_exists($callback)) {
-      $add_data = $callback($client, $product);
-      if ($add_data['site_url']) {
-        $data['site_url'] = $add_data['site_url'];
-      }
-      $data['order_data'] = serialize($add_data);
-    }
+  // Call the callback if provided
+  if (function_exists($callback)) {
+    $callback($client, $product, &$new_order);
+  }
 
-    if ($oid = db_result(db_query('SELECT order_id FROM {uc_hosting_orders} WHERE order_id = %d', $order->order_id))) {
-      drupal_write_record('uc_hosting_orders', $data, 'order_id');
-    }
-    else {
-      drupal_write_record('uc_hosting_orders', $data);
-    }
+  dsm($new_order);
+
+  // Write the order to uc_hosting_orders
+  $new_order['order_data'] = serialize($new_order['order_data']);
+  if ($old_order['order_id']) {
+    drupal_write_record('uc_hosting_orders', $new_order, 'order_id');
+  }
+  else {
+    drupal_write_record('uc_hosting_orders', $new_order);
+  }
 
 }
 
