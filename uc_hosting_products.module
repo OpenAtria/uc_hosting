@@ -44,12 +44,15 @@ function uc_hosting_products_order ($op, &$arg1, $arg2) {
  *   The Aegir client account
  * @param $product
  *   The Ubercart product
+ * @return
+ *   Data to be written to the order.
  */
 function uc_hosting_products_client_update ($client, $product) {
   $feature_info = db_fetch_array(db_query('SELECT * FROM {uc_hosting_products} WHERE model = "%s"', $product->model));
   switch ($feature_info['type']) {
     case 'platform':
       db_query('INSERT INTO {hosting_platform_client_access} (pid, cid) VALUES (%d, %d)', $feature_info['value'], $client->nid);
+      return array('platform' => $feature_info['value']);
       break;
     case 'sites':
       // Write the site url to uc_hosting_orders

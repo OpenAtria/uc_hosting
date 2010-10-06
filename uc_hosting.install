@@ -29,6 +29,12 @@ function uc_hosting_schema () {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'site_url' => array(
+        'description' => 'The url of the site created by this order, if any.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
       'order_data' => array(
         'description' => 'Serialized data concerning the contents of this order.',
         'type' => 'text',

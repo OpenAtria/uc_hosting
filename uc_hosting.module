@@ -130,6 +130,15 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
       'order_id' => $order->order_id,
       'client_nid' => $client->nid
     );
+
+    if (function_exists($callback)) {
+      $add_data = $callback($client, $product);
+      if ($add_data['site_url']) {
+        $data['site_url'] = $add_data['site_url'];
+      }
+      $data['order_data'] = serialize($add_data);
+    }
+
     if ($oid = db_result(db_query('SELECT order_id FROM {uc_hosting_orders} WHERE order_id = %d', $order->order_id))) {
       drupal_write_record('uc_hosting_orders', $data, 'order_id');
     }
@@ -137,9 +146,6 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
       drupal_write_record('uc_hosting_orders', $data);
     }
 
-  if (function_exists($callback)) {
-    $callback($client, $product);
-  }
 }
 
 /**
