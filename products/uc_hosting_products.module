@@ -2,7 +2,7 @@
 /**
  * @file
  *
- * Defines quota-based and platform based products
+ * Defines quota-based, site and platform based products
  */
 
 /**
@@ -420,13 +420,7 @@ function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
 
     // Offer the option of creating a site now or later
 
-    // Determine which platforms and install profiles are available
-
-    // Insert a field for the site url
-
-    // Determine available install profiles
-
-    // Insert fields to select platforms and install profiles
+    // Make sure we go through the purchase/site form 
 
   }
 }
