@@ -15,11 +15,32 @@ function uc_hosting_products_menu () {
     'title' => 'Create your site',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('uc_hosting_products_site_info_form'),
-    'access arguments' => array('access content'),
+    'access callback' => 'uc_hosting_products_site_info_access',
     'type' => MENU_CALLBACK,
   );
 
   return $items;
+}
+
+/**
+ * Access callback for the site details form
+ */
+function uc_hosting_products_site_info_access () {
+  global $user;
+
+  // Only return true if the user has a cart item of type site
+  $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
+  $cart = uc_cart_get_contents();  
+  foreach ($cart as $key => $item) { 
+    if ($item->model == $site_model) {
+      return TRUE;
+    }
+  }
+
+  // Or if they're user 1
+  if ($user->uid == 1) {
+    return TRUE;
+  }
 }
 
 /**
@@ -40,7 +61,6 @@ function uc_hosting_products_site_info_form ($form_state) {
   $site_form['db_server']['#type'] = 'value';
   $site_form['db_server']['#value'] = $site_form['db_server']['#default_value'];
 
-  dsm ($site_form);
   $site_form['#redirect'] = 'cart';
   $site_form['#submit'][] = 'uc_hosting_products_site_info_process';
 
@@ -66,7 +86,7 @@ function uc_hosting_products_cart_display ($item) {
  * Theme function to properly display the site info
  */
 function theme_uc_hosting_products_site_info($item) {
-  return "<ul>\n<li>{$item->data['site_data']['site_url']}</li>\n</ul>";
+  return "<ul>\n<li>{$item->data['site_data']['title']}</li>\n</ul>";
 }
 
 /**
@@ -74,20 +94,13 @@ function theme_uc_hosting_products_site_info($item) {
  */
 function uc_hosting_products_site_info_process ($form, $form_state) {
 
-  $site_data = array(
-    'site_url' => $form_state['values']['title'],
-    'profile' => $form_state['values']['profile'],
-    'platform' => $form_state['values']['platform'],
-    'language' => $form_state['values']['site_language'],
-  );
-
   $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
 
   // Get the current cart contents and add the submitted info to site items
   $cart = uc_cart_get_contents();
   foreach ($cart as $key => $item) {
     if ($item->model == $site_model) {
-      $item->data['site_data'] = $site_data;
+      $item->data['site_data'] = $form_state['values'];
       $item->module = 'uc_hosting_products';
       $item->data['module'] = 'uc_hosting_products';
       uc_cart_update_item($item);
@@ -145,13 +158,20 @@ function uc_hosting_products_client_update ($client, $product, &$hosting_order) 
       break;
     case 'sites':
       // Prepare the site data for inclusion in uc_hosting_orders
-      $hosting_order['site_url'] = $product->data['site_data']['site_url'];
-      $hosting_order['order_data']['sites']['site_url'] = $product->data['site_data'];
+      $hosting_order['site_url'] = $product->data['site_data']['title'];
+      $hosting_order['order_data']['sites'][$hosting_order['site_url']] = $product->data['site_data'];
+
       // Increment the client's site quota
       $current_limit = db_result(db_query('SELECT value FROM {hosting_client_quota} WHERE client = %d AND resource = "%s"', $client->nid, 'sites'));
-      hosting_quota_set_limit($client->nid, 'sites', $current_limit+1);
-      // Create the site
+      hosting_quota_set_limit($client->nid, 'sites', $current_limit+$product->qty);
 
+      // Create the site
+      $site = (object) $product->data['site_data'];
+      $site->type = 'site';
+      $site->status = 1;
+      $site->client = $client->nid;
+      $site->uid = $client->uid;
+      node_save($site);
       break;
     default:
       // TODO Once there are other quota resources to work with
@@ -430,16 +450,17 @@ function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
   if (db_result(db_query("SELECT type FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d AND (hp.model = '' OR hp.model = '%s')", $node->nid, $node->model)) == 'sites') {
 
     // Offer the option of creating a site now or later
-
+    // TODO^
+    
     // Make sure we go through the purchase/site form 
+    $form['#redirect'] = 'purchase/site';
 
   }
 }
 
 
 /**
- * Return TRUE if the given product (from an order) has a hosting feature
- * and also a correct SKU.
+ * Return TRUE if the given product (from an order) has a hosting feature.
  */
 function _uc_hosting_products_has_feature ($product) {
   $pfid = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d AND (hp.model = '' OR hp.model = '%s')", $product->nid, $product->model));
