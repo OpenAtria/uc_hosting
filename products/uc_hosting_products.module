@@ -27,11 +27,20 @@ function uc_hosting_products_menu () {
  */
 function uc_hosting_products_site_info_form ($form_state) {
 
+  // Retrieve the site form
   $site_form = drupal_retrieve_form('hosting_site_form', $form_state);
+  $state = array();
+  foreach (module_implements('form_alter') as $module) {
+    $function = $module .'_form_alter';
+    $function($form['site'], $state, 'site_node_form');
+  }
 
   // Change some of this form's elements
   unset($site_form['client']);
-  unset($site_form['db_server']);
+  $site_form['db_server']['#type'] = 'value';
+  $site_form['db_server']['#value'] = $site_form['db_server']['#default_value'];
+
+  dsm ($site_form);
   $site_form['#redirect'] = 'cart';
   $site_form['#submit'][] = 'uc_hosting_products_site_info_process';
 
@@ -135,12 +144,14 @@ function uc_hosting_products_client_update ($client, $product, &$hosting_order) 
       $hosting_order['order_data']['platform_access'][$feature_info['value']] = $feature_info['value'];
       break;
     case 'sites':
-      // Write the site url to uc_hosting_orders
-      // TODO ^
+      // Prepare the site data for inclusion in uc_hosting_orders
+      $hosting_order['site_url'] = $product->data['site_data']['site_url'];
+      $hosting_order['order_data']['sites']['site_url'] = $product->data['site_data'];
       // Increment the client's site quota
-      // TODO ^
+      $current_limit = db_result(db_query('SELECT value FROM {hosting_client_quota} WHERE client = %d AND resource = "%s"', $client->nid, 'sites'));
+      hosting_quota_set_limit($client->nid, 'sites', $current_limit+1);
       // Create the site
-      // TODO ^
+
       break;
     default:
       // TODO Once there are other quota resources to work with
