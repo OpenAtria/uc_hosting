@@ -28,20 +28,63 @@ function uc_hosting_products_menu () {
 function uc_hosting_products_site_info_form ($form_state) {
 
   $site_form = drupal_retrieve_form('hosting_site_form', $form_state);
-  dsm($site_form);
+
   // Change some of this form's elements
   unset($site_form['client']);
   unset($site_form['db_server']);
-  $site_form['#redirect'] = 'cart/checkout';
+  $site_form['#redirect'] = 'cart';
+  $site_form['#submit'][] = 'uc_hosting_products_site_info_process';
+
+  // Add a submit button to this form
+  $site_form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
 
   return $site_form;
 }
 
 /**
+ * Display the site info in the shopping cart
+ */
+function uc_hosting_products_cart_display ($item) {
+  $element = uc_product_cart_display($item);
+  $element['description']['#value'] .= theme_uc_hosting_products_site_info($item); 
+  return $element;
+}
+
+/**
+ * Theme function to properly display the site info
+ */
+function theme_uc_hosting_products_site_info($item) {
+  return "<ul>\n<li>{$item->data['site_data']['site_url']}</li>\n</ul>";
+}
+
+/**
  * Submit function for the create_site_form
  */
-function uc_hosting_products_site_info_form_submit ($form, $form_state) {
+function uc_hosting_products_site_info_process ($form, $form_state) {
 
+  $site_data = array(
+    'site_url' => $form_state['values']['title'],
+    'profile' => $form_state['values']['profile'],
+    'platform' => $form_state['values']['platform'],
+    'language' => $form_state['values']['site_language'],
+  );
+
+  $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
+
+  // Get the current cart contents and add the submitted info to site items
+  $cart = uc_cart_get_contents();
+  foreach ($cart as $key => $item) {
+    if ($item->model == $site_model) {
+      $item->data['site_data'] = $site_data;
+      drupal_set_message('Yup');
+      $item->module = 'uc_hosting_products';
+      $item->data['module'] = 'uc_hosting_products';
+      uc_cart_update_item($item);
+    }
+  }
 }
 
 /**
@@ -90,7 +133,7 @@ function uc_hosting_products_client_update ($client, $product, &$hosting_order) 
   switch ($feature_info['type']) {
     case 'platform':
       db_query('INSERT INTO {hosting_platform_client_access} (pid, cid) VALUES (%d, %d)', $feature_info['value'], $client->nid);
-      $hosting_order['order_data']['platform'][$feature_info['value']] = $feature_info['value'];
+      $hosting_order['order_data']['platform_access'][$feature_info['value']] = $feature_info['value'];
       break;
     case 'sites':
       // Write the site url to uc_hosting_orders
