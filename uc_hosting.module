@@ -86,8 +86,6 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
     $callback($client, $product, &$new_order);
   }
 
-  dsm($new_order);
-
   // Write the order to uc_hosting_orders
   $new_order['order_data'] = serialize($new_order['order_data']);
   if ($old_order['order_id']) {
