@@ -2,27 +2,6 @@
 // $Id$
 
 /**
- * Access callback for the site details form
- */
-function uc_hosting_products_site_info_access () {
-  global $user;
-
-  // Only return true if the user has a cart item of type site
-  $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
-  $cart = uc_cart_get_contents();
-  foreach ($cart as $key => $item) {
-    if ($item->model == $site_model) {
-      return TRUE;
-    }
-  }
-
-  // Or if they're user 1
-  if ($user->uid == 1) {
-    return TRUE;
-  }
-}
-
-/**
  * Callback for purchase/site
  */
 function uc_hosting_products_site_info_form ($form_state) {
