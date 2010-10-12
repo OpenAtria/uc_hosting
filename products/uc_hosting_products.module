@@ -469,14 +469,17 @@ function _uc_hosting_products_has_site_feature ($node) {
   // Create an array of site product nids
   $nidray = array();
   $result = db_query("SELECT pf.nid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting_site' AND hp.type = 'sites'");
-  foreach (db_fetch_array($result) as $row) {
-    $nidray[] = $row['nid'];
+  foreach (db_fetch_array($result) as $nid) {
+    $nidray[] = $nid;
   }
 
-  dsm($nidray);
-
   switch ($node->type) {
-    case 'product_type':
+    case 'product_kit':
+      foreach ($node->products as $product) {
+        if (in_array($product->nid, $nidray)) {
+          return TRUE;
+        }
+      }
       break;
     default:
       if (in_array($node->nid, $nidray)) { 
