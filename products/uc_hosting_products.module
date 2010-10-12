@@ -33,30 +33,31 @@ function uc_hosting_products_cart_display ($item) {
 }
 
 /**
- * Theme function to properly display the site info
+ * Imp of hook_uc_form_alter to get the info we need to create a site
  *
- * Presently undeclared
+ * This will be called before the form is rendered, allowing us to use other modules
+ * to customize the product workflow with hook_form_alter.
+ *
+ * @param $form
+ *   The form object
+ * @param $form_state
+ *   The form with values and other changes
+ * @param $form_id
+ *   The unique identifier of the form
  */
-function theme_uc_hosting_products_site_info($item) {
-  return "<ul>\n<li>{$item->data['site_data']['title']}</li>\n</ul>";
-}
+function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
+  $node =& $form['node']['#value'];
 
-/**
- * Submit function for the create_site_form
- */
-function uc_hosting_products_site_info_process ($form, $form_state) {
+  // Determine if the product has the site feature or a product in the product kit has the site feature
 
-  $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
+  if (_uc_hosting_products_has_site_feature ($node)) {
 
-  // Get the current cart contents and add the submitted info to site items
-  $cart = uc_cart_get_contents();
-  foreach ($cart as $key => $item) {
-    if ($item->model == $site_model) {
-      $item->data['site_data'] = $form_state['values'];
-      $item->module = 'uc_hosting_products';
-      $item->data['module'] = 'uc_hosting_products';
-      uc_cart_update_item($item);
-    }
+    // Offer the option of creating a site now or later
+    // TODO^
+    
+    // Make sure we go through the purchase/site form 
+    $form['#redirect'] = 'purchase/site';
+
   }
 }
 
@@ -383,32 +384,12 @@ function uc_hosting_products_site_settings() {
 }
 
 /**
- * Imp of hook_uc_form_alter to get the info we need to create a site
+ * Theme function to properly display the site info
  *
- * This will be called before the form is rendered, allowing us to use other modules
- * to customize the product workflow with hook_form_alter.
- *
- * @param $form
- *   The form object
- * @param $form_state
- *   The form with values and other changes
- * @param $form_id
- *   The unique identifier of the form
+ * Presently undeclared
  */
-function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
-  $node =& $form['node']['#value'];
-
-  // Determine if the product has the site feature or a product in the product kit has the site feature
-
-  if (_uc_hosting_products_has_site_feature ($node)) {
-
-    // Offer the option of creating a site now or later
-    // TODO^
-    
-    // Make sure we go through the purchase/site form 
-    $form['#redirect'] = 'purchase/site';
-
-  }
+function theme_uc_hosting_products_site_info($item) {
+  return "<ul>\n<li>{$item->data['site_data']['title']}</li>\n</ul>";
 }
 
 /**

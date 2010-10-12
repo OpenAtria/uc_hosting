@@ -52,3 +52,21 @@ function uc_hosting_products_site_info_form ($form_state) {
   return $site_form;
 }
 
+/**
+ * Submit function for the create_site_form
+ */
+function uc_hosting_products_site_info_process ($form, $form_state) {
+
+  $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
+
+  // Get the current cart contents and add the submitted info to site items
+  $cart = uc_cart_get_contents();
+  foreach ($cart as $key => $item) { 
+    if ($item->model == $site_model) {
+      $item->data['site_data'] = $form_state['values'];
+      $item->module = 'uc_hosting_products';
+      $item->data['module'] = 'uc_hosting_products';
+      uc_cart_update_item($item);
+    }
+  }
+}
