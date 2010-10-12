@@ -1,0 +1,466 @@
+<?php
+/**
+ * @file
+ *
+ * Defines quota-based, site and platform based products
+ */
+
+/**
+ * Implementation of hook_menu
+ */
+function uc_hosting_products_menu () {
+  $items = array();
+
+  $items['purchase/site'] = array(
+    'title' => 'Create your site',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_hosting_products_site_info_form'),
+    'access callback' => 'uc_hosting_products_site_info_access',
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_hosting_products.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Access callback for the site details form
+ */
+function uc_hosting_products_site_info_access () {
+  global $user;
+
+  // Only return true if the user has a cart item of type site
+  $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
+  $cart = uc_cart_get_contents();
+  foreach ($cart as $key => $item) {
+    if ($item->model == $site_model) {
+      return TRUE;
+    }
+  }
+
+  // Or if they're user 1
+  if ($user->uid == 1) {
+    return TRUE;
+  }
+}
+
+/**
+ * Display the site info in the shopping cart
+ */
+function uc_hosting_products_cart_display ($item) {
+  $element = uc_product_cart_display($item);
+  $element['description']['#value'] .= theme_uc_hosting_products_site_info($item); 
+  return $element;
+}
+
+/**
+ * Imp of hook_uc_form_alter to get the info we need to create a site
+ *
+ * This will be called before the form is rendered, allowing us to use other modules
+ * to customize the product workflow with hook_form_alter.
+ *
+ * @param $form
+ *   The form object
+ * @param $form_state
+ *   The form with values and other changes
+ * @param $form_id
+ *   The unique identifier of the form
+ */
+function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
+  $node =& $form['node']['#value'];
+
+  // Determine if the product has the site feature or a product in the product kit has the site feature
+
+  if (_uc_hosting_products_has_site_feature ($node)) {
+
+    // Offer the option of creating a site now or later
+    $form['create_later'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Create my site later.'),
+      '#weight' => 9,
+    );
+
+    $form['submit']['#weight'] = 10;
+
+    // Make sure we go through the purchase/site form 
+    $form['#submit'][] = 'uc_hosting_products_site_redirect';
+  }
+}
+
+/**
+ * Redirect function to allow clients to choose if they wish to create their site right away
+ */
+function uc_hosting_products_site_redirect ($form, &$form_state) {
+  if (!$form_state['values']['create_later']) {
+    drupal_goto('purchase/site');
+  }
+}
+
+/**
+ * Implementation of hook_order
+ *
+ * Actions to take on order changes involving an aegir product
+ *
+ * @param $op string
+ *   Provided by ubercart on invocation
+ * @param &$arg1
+ *   Different data depending on the op
+ * @param $arg2
+ *   Different data depending on the op
+ */
+function uc_hosting_products_order ($op, &$arg1, $arg2) {
+  switch ($op) {
+
+    case 'update':
+      if ($arg2 == 'completed') {
+        foreach ($arg1->products as $product) {
+          if (_uc_hosting_products_has_feature ($product)) {
+            // Make the changes necessary to the hosting client
+            $user = uc_hosting_update_client($arg1, $product, 'uc_hosting_products_client_update');
+          }
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+/**
+ * Callback for client updates
+ *
+ * @param $client
+ *   The Aegir client account
+ * @param $product
+ *   The Ubercart product
+ * @param $hosting_order
+ *   The data to be written to uc_hosting_orders
+ */
+function uc_hosting_products_client_update ($client, $product, &$hosting_order) {
+  $feature_info = db_fetch_array(db_query('SELECT * FROM {uc_hosting_products} WHERE model = "%s"', $product->model));
+  switch ($feature_info['type']) {
+    case 'platform':
+      db_query('INSERT INTO {hosting_platform_client_access} (pid, cid) VALUES (%d, %d)', $feature_info['value'], $client->nid);
+      $hosting_order['order_data']['platform_access'][$feature_info['value']] = $feature_info['value'];
+      break;
+    case 'sites':
+      // Prepare the site data for inclusion in uc_hosting_orders
+      $hosting_order['site_url'] = $product->data['site_data']['title'];
+      $hosting_order['order_data']['sites'][$hosting_order['site_url']] = $product->data['site_data'];
+
+      // Increment the client's site quota
+      $current_limit = db_result(db_query('SELECT value FROM {hosting_client_quota} WHERE client = %d AND resource = "%s"', $client->nid, 'sites'));
+      hosting_quota_set_limit($client->nid, 'sites', $current_limit+$product->qty);
+
+      // Create the site
+      $site = (object) $product->data['site_data'];
+      $site->type = 'site';
+      $site->status = 1;
+      $site->client = $client->nid;
+      $site->uid = $client->uid;
+      node_save($site);
+      break;
+    default:
+      // TODO Once there are other quota resources to work with
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_product_feature().
+ */
+function uc_hosting_products_product_feature () {
+  // First set the feature for the platforms
+  $features[] = array(
+    'id' => 'hosting_platform',
+    'title' => t('Access to a platform'),
+    'callback' => 'uc_hosting_products_platform_form',
+    'delete' => 'uc_hosting_products_feature_delete',
+    'settings' => 'uc_hosting_products_platform_settings',
+  );
+  // This sets the feature for sites
+  $features[] = array(
+    'id' => 'hosting_site',
+    'title' => t('Create a site and adjust quotas accordingly.'),
+    'callback' => 'uc_hosting_products_site_form',
+    'delete' => 'uc_hosting_products_feature_delete',
+    'settings' => 'uc_hosting_products_site_settings'
+  );
+
+  return $features;
+}
+
+/**
+ * Callback to add the platform form on the product feature page
+ */
+function uc_hosting_products_platform_form ($form_state, $node, $feature) {
+  $form = array();
+
+  if (!empty($feature)) {
+    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
+  }
+
+  // Grab all the models on this product, get rid of the top -Any- option
+  $models = uc_product_get_models($node);
+  array_shift($models);
+
+  $form['model'] = array(
+    '#type' => 'select',
+    '#title' => t('SKU'),
+    '#default_value' => $hosting_product->model,
+    '#description' => t('This is the SKU that will need to be purchased to associate the purchase with a site.'),
+    '#options' => $models,
+  );
+
+  // @see _hosting_get_platforms()
+  if (user_access('view locked platforms')) {
+    $platforms = _hosting_get_platforms();
+  }
+  else if (user_access('view platform')) {
+    $platforms = _hosting_get_enabled_platforms();
+  }
+  else {
+    $platforms = array();
+    drupal_set_message('You must have permission to access platforms to enable this feature.', 'warning');
+  }
+
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+  $form['pfid'] = array(
+    '#type' => 'value',
+    '#value' => $feature['pfid'],
+  );
+
+  $form['platform'] = array(
+    '#type' => 'select',
+    '#title' => t('Platform'),
+    '#description' => t('Select the platform to associate with this product.'),
+    '#default_value' => $hosting_product->value,
+    '#options' => $platforms,
+    '#required' => TRUE,
+  );
+
+  return uc_product_feature_form ($form);
+}
+
+/**
+ * Platform validation function
+ */
+function uc_hosting_products_platform_form_validate($form, &$form_state) {
+  // For this to work, we can have only one hosting feature per product
+  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
+  if ($check) {
+    form_set_error('model', 'Sorry, only one hosting feature per product.');
+  }
+}
+
+/**
+ * Save the product feature settings.
+ */
+function uc_hosting_products_platform_form_submit($form, &$form_state) {
+  $hosting_product = array(
+    'pfid' => $form_state['values']['pfid'],
+    'model' => $form_state['values']['model'],
+    'type' => 'platform',
+    'value' => $form_state['values']['platform'],
+  );
+
+  $platform_node = node_load($hosting_product['value']);
+  $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
+  $description .= t('<strong>Platform:</strong> !platform', array('!platform' => $platform_node->title));
+
+  $data = array(
+    'pfid' => $form_state['values']['pfid'],
+    'nid' => $form_state['values']['nid'],
+    'fid' => 'hosting_platform',
+    'description' => $description,
+  );
+
+  $form_state['redirect'] = uc_product_feature_save($data);
+
+  // Insert or update uc_hosting_products table
+  if (empty($hosting_product['pfid'])) {
+    $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
+  }
+
+  $hpid = db_result(db_query("SELECT hpid FROM {uc_hosting_products} WHERE pfid = %d", $hosting_product['pfid']));
+
+  $key = NULL;
+  if ($hpid) {
+    $key = 'hpid';
+    $hosting_product['hpid'] = $hpid;
+  }
+
+  drupal_write_record('uc_hosting_products', $hosting_product, $key);
+}
+
+/**
+ * Settings form for the platforms
+ */
+function uc_hosting_products_platform_settings() {
+  $form = array();
+  return $form;
+}
+
+/**
+ * Delete function for all features in this module (platforms and quotas)
+ */
+function uc_hosting_products_feature_delete($feature) {
+  db_query("DELETE FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']);
+}
+
+/**
+ * Callback to add the site form on the product feature page
+ */
+function uc_hosting_products_site_form ($form_state, $node, $feature) {
+  $form = array();
+
+  if (!empty($feature)) {
+    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
+  }
+
+  // Grab all the models on this product, get rid of the top -Any- option
+  $models = uc_product_get_models($node);
+  array_shift($models);
+
+  $form['model'] = array(
+    '#type' => 'select',
+    '#title' => t('SKU'),
+    '#default_value' => $hosting_product->model,
+    '#description' => t('This is the SKU that will need to be purchased to associate the purchase with a site.'),
+    '#options' => $models,
+  );
+
+  // @see hosting_quota_get
+  if (user_access('edit all quotas')) {
+    $quotas = module_invoke_all('hosting_quota_resource');
+  }
+  else {
+    $quotas = array();
+    drupal_set_message('You must be able to edit quotas to add this feature.', 'warning');
+  }
+
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+  $form['pfid'] = array(
+    '#type' => 'value',
+    '#value' => $feature['pfid'],
+  );
+
+  $form['quota'] = array(
+    '#type' => 'value',
+    '#value' => 'sites',
+  );
+
+  return uc_product_feature_form ($form);
+}
+
+/**
+ * Site validation function
+ */
+function uc_hosting_products_site_form_validate($form, &$form_state) {
+  // For this to work, we can have only one hosting feature per product
+  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
+  if ($check) {
+    form_set_error('model', 'Sorry, only one hosting feature per product.');
+  }
+}
+
+/**
+ * Save the product site feature settings.
+ */
+function uc_hosting_products_site_form_submit($form, &$form_state) {
+  $hosting_product = array(
+    'pfid' => $form_state['values']['pfid'],
+    'model' => $form_state['values']['model'],
+    'type' => 'sites',
+    'value' => 0,
+  );
+
+  $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
+  $description .= t('Allows the creation of a site on product purchase.');
+
+  $data = array(
+    'pfid' => $form_state['values']['pfid'],
+    'nid' => $form_state['values']['nid'],
+    'fid' => 'hosting_site',
+    'description' => $description,
+  );
+
+  $form_state['redirect'] = uc_product_feature_save($data);
+
+  // Insert or update uc_hosting_products table
+  if (empty($hosting_product['pfid'])) {
+    $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
+  }
+
+  $hpid = db_result(db_query("SELECT hpid FROM {uc_hosting_products} WHERE pfid = %d", $hosting_product['pfid']));
+
+  $key = NULL;
+  if ($hpid) {
+    $key = 'hpid';
+    $hosting_product['hpid'] = $hpid;
+  }
+
+  drupal_write_record('uc_hosting_products', $hosting_product, $key);
+}
+
+/**
+ * Settings form for the sites
+ */
+function uc_hosting_products_site_settings() {
+  $form = array();
+  return $form;
+}
+
+/**
+ * Theme function to properly display the site info
+ *
+ * Presently undeclared
+ */
+function theme_uc_hosting_products_site_info($item) {
+  return "<ul>\n<li>{$item->data['site_data']['title']}</li>\n</ul>";
+}
+
+/**
+ * Helper function to test for the site feature
+ *
+ * @param $node
+ *   A node object
+ */
+function _uc_hosting_products_has_site_feature ($node) {
+  // Create an array of site product nids
+  $nidray = array();
+  $result = db_query("SELECT pf.nid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting_site' AND hp.type = 'sites'");
+  foreach (db_fetch_array($result) as $nid) {
+    $nidray[] = $nid;
+  }
+
+  switch ($node->type) {
+    case 'product_kit':
+      foreach ($node->products as $product) {
+        if (in_array($product->nid, $nidray)) {
+          return TRUE;
+        }
+      }
+      break;
+    default:
+      if (in_array($node->nid, $nidray)) { 
+        return TRUE;
+      }
+      break;
+  }
+}
+
+/**
+ * Return TRUE if the given product (from an order) has a hosting feature.
+ */
+function _uc_hosting_products_has_feature ($product) {
+  $pfid = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d AND (hp.model = '' OR hp.model = '%s')", $product->nid, $product->model));
+  return $pfid;
+}
