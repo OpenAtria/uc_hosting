@@ -446,8 +446,9 @@ function uc_hosting_products_site_settings() {
 function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
   $node =& $form['node']['#value'];
 
-  // Determine if the product has the site feature
-  if (db_result(db_query("SELECT type FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d AND (hp.model = '' OR hp.model = '%s')", $node->nid, $node->model)) == 'sites') {
+  // Determine if the product has the site feature or a product in the product kit has the site feature
+
+  if (_uc_hosting_products_has_site_feature ($node)) {
 
     // Offer the option of creating a site now or later
     // TODO^
@@ -458,6 +459,32 @@ function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
   }
 }
 
+/**
+ * Helper function to test for the site feature
+ *
+ * @param $node
+ *   A node object
+ */
+function _uc_hosting_products_has_site_feature ($node) {
+  // Create an array of site product nids
+  $nidray = array();
+  $result = db_query("SELECT pf.nid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting_site' AND hp.type = 'sites'");
+  foreach (db_fetch_array($result) as $row) {
+    $nidray[] = $row['nid'];
+  }
+
+  dsm($nidray);
+
+  switch ($node->type) {
+    case 'product_type':
+      break;
+    default:
+      if (in_array($node->nid, $nidray)) { 
+        return TRUE;
+      }
+      break;
+  }
+}
 
 /**
  * Return TRUE if the given product (from an order) has a hosting feature.
