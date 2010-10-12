@@ -1,8 +1,8 @@
 ; $Id$
-name = "Aegir Ubercart Products"
-description = "Define content types and products for hosting"
+name = "Aegir Ubercart Integration"
+description = "Shared functions for the uc_hosting family of modules."
 core = 6.x
-package = "Hosting"
+package = "Hosting & Ubercart Integration"
 
 dependencies[] = uc_product
 dependencies[] = uc_attribute

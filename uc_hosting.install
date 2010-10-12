@@ -12,117 +12,39 @@
 function uc_hosting_schema () {
   $schema = array();
 
-  $schema['uc_hosting_products'] = array(
-    'description' => 'Maps aegir product features to a specific hosting client',
+  $schema['uc_hosting_orders'] = array(
+    'description' => 'Stores additional information about the orders',
     'fields' => array(
-      'hpid' => array(
-        'description' => 'IDs the hosting product.',
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'pfid' => array(
-        'description' => 'The {uc_product_features}.pfid.',
+      'order_id' => array(
+        'description' => 'The unique ID of the order.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
-      'model' => array(
-        'description' => 'The product model.',
+      'client_nid' => array(
+        'description' => 'The nid of the aegir client modified by this order.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'site_url' => array(
+        'description' => 'The url of the site created by this order, if any.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => FALSE,
       ),
-    ),
-    'primary key' => array('hpid'),
-  );
-
-  $schema['uc_hosting_quotas'] = array(
-    'description' => 'Maps quotas to a specific attribute',
-    'fields' => array(
-      'qid' => array(
-        'description' => 'IDs the quota.',
-        'type' => 'serial',
-        'unsigned' => TRUE,
+      'order_data' => array(
+        'description' => 'Serialized data concerning the contents of this order.',
+        'type' => 'text',
         'not null' => TRUE,
-      ),
-      'aid' => array(
-        'description' => 'The {uc_attributes}.aid.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-        'default' => 0,
-      ),
-      'quota' => array(
-        'description' => 'The machine name of the quota, as it would appear in {hosting_client_quota}.resource.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-      ),
-    ),
-    'primary key' => array('qid'),
-  );
-
-  $schema['uc_hosting_quota_options'] = array(
-    'description' => 'Stores integer values associated to options.',
-    'fields' => array(
-      'oid' => array(
-        'description' => 'The value from {uc_attribute_options}.oid.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'aid' => array(
-        'description' => 'The id of the parent attribute.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'value' => array(
-        'description' => 'The quota limit to assign when this option is chosen.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
+        'size' => 'big',
       ),
     ),
     'indexes' => array(
-      'oid' => array('oid'),
-      'aid' => array('aid'),
-    ),
-  );
-
-  $schema['uc_hosting_platform_options'] = array(
-    'description' => 'Stores platform associations to options.',
-    'fields' => array(
-      'oid' => array(
-        'description' => 'The value from {uc_attribute_options}.oid.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'aid' => array(
-        'description' => 'The id of the parent attribute.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'platform' => array(
-        'description' => 'The platform nid associated to this option.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0
-      ),
-    ),
-    'indexes' => array(
-      'oid' => array('oid'),
-      'aid' => array('aid'),
+      'order_id' => array('order_id'),
+      'client_nid' => array('client_nid'),
     ),
   );
 
@@ -134,16 +56,6 @@ function uc_hosting_schema () {
  */
 function uc_hosting_install () {
   drupal_install_schema('uc_hosting');
-  // Generate the platform attribute
-  db_query("INSERT INTO {uc_attributes} (name, label, ordering, required, display, description)
-  VALUES ('%s', '%s', %d, %d, %d, '%s')",
-    'platforms',
-    'Platforms Available',
-    -9,
-    1,
-    2,
-    'Choose what kinds of sites you would like available for installation.');
-  variable_set('uc_hosting_platforms_attribute', db_result(db_query('SELECT a.aid FROM {uc_attributes} a WHERE a.name = "%s"', 'platforms')));
 }
 
 /**
@@ -151,5 +63,4 @@ function uc_hosting_install () {
  */
 function uc_hosting_uninstall () {
   drupal_uninstall_schema('uc_hosting');
-  variable_del('uc_hosting_platforms_attribute');
 }
