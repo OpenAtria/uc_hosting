@@ -47,10 +47,16 @@ function uc_hosting_products_site_info_access () {
 /**
  * Display the site info in the shopping cart
  */
-function uc_hosting_products_cart_display ($item) {
-  $element = uc_product_cart_display($item);
-  $element['description']['#value'] .= theme_uc_hosting_products_site_info($item); 
-  return $element;
+function uc_hosting_products_product_description_alter(&$description, $product) {
+  $description['site_url'] = array(
+    '#url' => array(
+      '#type' => 'value',
+      '#value' => $product->data['site_data']['title'],
+    ),
+    '#theme' => 'uc_hosting_products_site_info',
+    '#weight' => 0,
+  );
+  return $description;
 }
 
 /**
@@ -405,12 +411,26 @@ function uc_hosting_products_site_settings() {
 }
 
 /**
+ * Imp of hook_theme
+ */
+function uc_hosting_products_theme() {
+  return array(
+    'uc_hosting_products_site_info' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+/**
  * Theme function to properly display the site info
  *
  * Presently undeclared
  */
-function theme_uc_hosting_products_site_info($item) {
-  return "<ul>\n<li>{$item->data['site_data']['title']}</li>\n</ul>";
+function theme_uc_hosting_products_site_info($element) {
+  $rows = array(
+    'url' => $element['#url']['#value'],
+  );
+  return theme('item_list', $rows);
 }
 
 /**
