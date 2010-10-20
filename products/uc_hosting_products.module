@@ -45,6 +45,15 @@ function uc_hosting_products_site_info_access () {
 }
 
 /**
+ * This is called in hosting_site when it rebuilds the site form
+ */
+function uc_hosting_products_hosting_site_options_alter (&$settings, $choices) {
+  // Add platforms in the current cart to available platforms
+  $platforms = _uc_hosting_products_fetch_cart_platforms($settings['platform']);
+  $settings['platform'] = $platforms;
+}
+
+/**
  * Display the site info in the shopping cart
  */
 function uc_hosting_products_product_description_alter(&$description, $product) {
@@ -476,6 +485,36 @@ function _uc_hosting_products_has_site_feature ($node) {
       break;
   }
 }
+
+/**
+ * Helper function to return any platforms currently in the cart
+ *
+ * @param $platforms
+ *   An existing array of platforms to append to
+ * @param $cart
+ *   An ubercart cart
+ */
+function _uc_hosting_products_fetch_cart_platforms ($platforms = array(), $cart = NULL) {
+  // Create an array of site product nids
+  $nidray = array();
+  $result = db_query("SELECT pf.nid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting_platform' AND hp.type = 'platform';");
+  foreach (db_fetch_array($result) as $nid) {
+    $nidray[] = $nid;
+  }
+ 
+  // Fetch the cart if it is not already there
+  if (!$cart) {
+    $cart = uc_cart_get_contents();
+  }
+
+  foreach ($cart as $product) {
+    if (in_array($product->nid, $nidray)) {
+      $platforms[] = (int) $product->nid;
+    }
+  }
+  return $platforms;
+}
+
 
 /**
  * Return TRUE if the given product (from an order) has a hosting feature.
