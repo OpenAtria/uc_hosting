@@ -46,6 +46,23 @@ function uc_hosting_test_page () {
 }
 
 /**
+ * Validate that Mr. shopper is not duplicating a client
+ */
+function uc_hosting_form_uc_cart_checkout_form_alter (&$form, $form_state) {
+  // TODO Set a validation function
+  // $form[#validate][] = 'uc_hosting_checkout_validation';
+}
+
+/**
+ *
+ */
+function uc_hosting_checkout_validation ($form, $form_state) {
+  // TODO The submitted billing info will be used to modify clients
+  // We need to make sure that data is not going to duplicate
+  // an existing client first.
+}
+
+/**
  * Update a client
  *
  * @param $order
