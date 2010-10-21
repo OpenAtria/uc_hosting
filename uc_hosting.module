@@ -64,8 +64,12 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
 
   if (!isset($client)) {
     // Attempt to retrieve the aegir client
-    $client = hosting_get_client_by_email($user->mail);
-    if (!$client) {
+    $clients = hosting_get_client_from_user($user->uid);
+    if ($clients) {
+      // XXX: hack. we should be passed the selected client from the
+      // order instead and validate that.
+      $client = node_load(key($clients));
+    } else {
       // Create a client
       $client = _uc_hosting_add_client($user, $order);
     }
