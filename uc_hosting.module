@@ -56,23 +56,20 @@ function uc_hosting_test_page () {
  *   The function callback to use
  */
 function uc_hosting_update_client ($order, $product, $callback = NULL) {
-  static $client;
   $user = user_load(array('uid' => $order->uid));
 
   // Attempt to get an existing order
   $old_order = db_fetch_array(db_query('SELECT * FROM {uc_hosting_orders} WHERE order_id = %d', $order->order_id));
 
-  if (!isset($client)) {
-    // Attempt to retrieve the aegir client
-    $clients = hosting_get_client_from_user($user->uid);
-    if ($clients) {
-      // XXX: hack. we should be passed the selected client from the
-      // order instead and validate that.
-      $client = node_load(key($clients));
-    } else {
-      // Create a client
-      $client = _uc_hosting_add_client($user, $order);
-    }
+  // Attempt to retrieve the aegir client
+  $clients = hosting_get_client_from_user($user->uid);
+  if ($clients) {
+    // XXX: hack. we should be passed the selected client from the
+    // order instead and validate that.
+    $client = node_load(key($clients));
+  } else {
+    // Create a client
+    $client = _uc_hosting_add_client($user, $order);
   }
 
   // Prepare the updated or new order
