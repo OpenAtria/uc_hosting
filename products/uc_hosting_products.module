@@ -168,13 +168,15 @@ function uc_hosting_products_client_update ($client, $product, &$hosting_order) 
       $current_limit = db_result(db_query('SELECT value FROM {hosting_client_quota} WHERE client = %d AND resource = "%s"', $client->nid, 'sites'));
       hosting_quota_set_limit($client->nid, 'sites', $current_limit+$product->qty);
 
-      // Create the site
+      // Create the site, if there is a site url
       $site = (object) $product->data['site_data'];
-      $site->type = 'site';
-      $site->status = 1;
-      $site->client = $client->nid;
-      $site->uid = $client->uid;
-      node_save($site);
+      if ($site->title) {
+        $site->type = 'site';
+        $site->status = 1;
+        $site->client = $client->nid;
+        $site->uid = $client->uid;
+        node_save($site);
+      }
       break;
     default:
       // TODO Once there are other quota resources to work with
