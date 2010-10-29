@@ -49,8 +49,8 @@ function uc_hosting_products_site_info_access () {
  */
 function uc_hosting_products_hosting_site_options_alter (&$settings, $choices) {
   // Add platforms in the current cart to available platforms
-  $platforms = _uc_hosting_products_fetch_cart_platforms($settings['platform']);
-  $settings['platform'] = $platforms;
+  $options = _uc_hosting_products_fetch_cart_options($settings);
+  $settings = $options;
 }
 
 /**
@@ -498,25 +498,42 @@ function _uc_hosting_products_has_site_feature ($node) {
  * @param $cart
  *   An ubercart cart
  */
-function _uc_hosting_products_fetch_cart_platforms ($platforms = array(), $cart = NULL) {
+function _uc_hosting_products_fetch_cart_options ($settings = array(), $cart = NULL) {
   // Create an array of site product nids
   $nidray = array();
-  $result = db_query("SELECT pf.nid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting_platform' AND hp.type = 'platform';");
-  foreach (db_fetch_array($result) as $nid) {
-    $nidray[] = $nid;
+  $result = db_query("SELECT pf.nid, hp.value, n.title FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid LEFT JOIN {node} n ON n.nid = hp.value WHERE pf.fid = 'hosting_platform' AND hp.type = 'platform';");
+  while ($row = db_fetch_array($result)) {
+    $platforms[$row['nid']] = $row;
   }
- 
+
   // Fetch the cart if it is not already there
   if (!$cart) {
     $cart = uc_cart_get_contents();
   }
 
   foreach ($cart as $product) {
-    if (in_array($product->nid, $nidray)) {
-      $platforms[] = (int) $product->nid;
+    if (array_key_exists($product->nid, $platforms)) {
+      $settings['js']['platform'][] = (int) $platforms[$product->nid]['value'];
+      $settings['platform'][] = (int) $platforms[$product->nid]['value'];
+      $settings['form']['platform'][$platforms[$product->nid]['value']] = $platforms[$product->nid]['title'];
+
+      // We should do profiles too
+      $profiles = hosting_package_instances_load(array(
+        'p.package_type' => 'profile',
+        'n.status' => 1,
+        'r.type' => 'platform',
+        'r.nid' => $platforms[$product->nid]['value']));
+      foreach ($profiles as $profile) {
+        $settings['js']['profile'][] = (int) $profile->nid;
+        $settings['profile'][] = (int) $profile->nid;
+        $settings['form']['profile'][$profile->nid] = $profile->title;
+      }
+
     }
   }
-  return $platforms;
+
+  dsm ($settings);
+  return $settings;
 }
 
 
