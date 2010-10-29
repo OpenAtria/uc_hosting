@@ -57,14 +57,16 @@ function uc_hosting_products_hosting_site_options_alter (&$settings, $choices) {
  * Display the site info in the shopping cart
  */
 function uc_hosting_products_product_description_alter(&$description, $product) {
-  $description['site_url'] = array(
-    '#url' => array(
-      '#type' => 'value',
-      '#value' => $product->data['site_data']['title'],
-    ),
-    '#theme' => 'uc_hosting_products_site_info',
-    '#weight' => 0,
-  );
+  if ($product->data['site_data']['title']) {
+    $description['site_url'] = array(
+      '#url' => array(
+        '#type' => 'value',
+        '#value' => $product->data['site_data']['title'],
+      ),
+      '#theme' => 'uc_hosting_products_site_info',
+      '#weight' => 0,
+    );
+  }
   return $description;
 }
 
