@@ -532,7 +532,6 @@ function _uc_hosting_products_fetch_cart_options ($settings = array(), $cart = N
     }
   }
 
-  dsm ($settings);
   return $settings;
 }
 
