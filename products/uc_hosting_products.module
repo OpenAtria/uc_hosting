@@ -513,9 +513,7 @@ function _uc_hosting_products_fetch_cart_options ($settings = array(), $cart = N
 
   foreach ($cart as $product) {
     if (array_key_exists($product->nid, $platforms)) {
-      $settings['js']['platform'][] = (int) $platforms[$product->nid]['value'];
       $settings['platform'][] = (int) $platforms[$product->nid]['value'];
-      $settings['form']['platform'][$platforms[$product->nid]['value']] = $platforms[$product->nid]['title'];
 
       // We should do profiles too
       $profiles = hosting_package_instances_load(array(
@@ -524,9 +522,7 @@ function _uc_hosting_products_fetch_cart_options ($settings = array(), $cart = N
         'r.type' => 'platform',
         'r.nid' => $platforms[$product->nid]['value']));
       foreach ($profiles as $profile) {
-        $settings['js']['profile'][] = (int) $profile->nid;
         $settings['profile'][] = (int) $profile->nid;
-        $settings['form']['profile'][$profile->nid] = $profile->title;
       }
 
     }
