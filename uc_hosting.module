@@ -83,8 +83,14 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
   if ($clients) {
     // XXX: hack. we should be passed the selected client from the
     // order instead and validate that.
-    $client = node_load(key($clients));
-  } else {
+    foreach ($clients as $key => $value) {
+      $client_test = node_load($key);
+      if ($order->primary_email == $client_test->email) {
+        $client = $client_test;
+      }
+    }
+  } 
+  if (!$client) {
     // Create a client
     $client = _uc_hosting_add_client($user, $order);
   }
