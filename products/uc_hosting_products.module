@@ -179,6 +179,10 @@ function uc_hosting_products_client_update ($client, $product, &$hosting_order) 
         $site->uid = $client->uid;
         node_save($site);
       }
+      drupal_set_message(t('Your site, @url, has been created. You can view it !here.', array(
+        '@url' => $site->title,
+        '!here' => l('here', "node/{$client->nid}"),
+      )));
       break;
     default:
       // TODO Once there are other quota resources to work with
