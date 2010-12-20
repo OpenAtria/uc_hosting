@@ -1,0 +1,234 @@
+<?php
+
+function uc_hosting_associate_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($op == 'view' && $node->type == 'site' && _uc_hosting_products_node_can_associate($node->nid)) {
+    $order = db_fetch_object(db_query("SELECT * FROM {uc_hosting_orders} WHERE site_url = '%s'", $node->title));
+    $order_data = unserialize($order->order_data);
+    if (in_array('associate', array_keys($order_data))) {
+      $purchased = TRUE;
+    }
+
+    if (!$purchased) {
+      $form_state = array();
+      $product_nid = db_result(db_query("SELECT p.nid FROM {uc_products} p LEFT JOIN {uc_hosting_products} hp ON p.model = hp.model WHERE hp.type = 'associate' ORDER BY p.vid DESC LIMIT 1"));
+      $product = node_load($product_nid);
+      $add_to_cart = theme('uc_product_add_to_cart', $product);
+      $node->content['purchase'] = array(
+        '#prefix' => '<div id="hosting-site-purchase">',
+        '#suffix' => '</div>',
+        'cart' => array(
+          '#value' => $add_to_cart,
+        ),
+      );
+    }
+
+    $node->content['info']['purchased'] = array(
+      '#type' => 'item',
+      '#title' => 'Purchased',
+      '#value' => $purchased ? 'Yes' : 'No',
+    );
+  }
+}
+
+
+function uc_hosting_associate_uc_form_alter (&$form, &$form_state, $form_id) {
+  $nid = arg(1);
+  if (is_numeric($nid) && _uc_hosting_products_node_can_associate($nid)) {
+    $form['site_nid'] = array(
+      '#type' => 'value',
+      '#value' => $nid,
+    );
+
+    $form['#submit'][] = 'uc_hosting_products_associate_info_process';
+  }
+}
+
+/**
+ * Implementation of hook_product_feature().
+ */
+function uc_hosting_associate_product_feature () {
+  // This sets the feature for associating products with sites
+  $features[] = array(
+    'id' => 'hosting_associate',
+    'title' => t('Associate an aegir site with a purchase.'),
+    'callback' => 'uc_hosting_associate_form',
+    'delete' => 'uc_hosting_products_feature_delete',
+    'settings' => 'uc_hosting_associate_settings'
+  );
+  return $features;
+}
+
+
+function uc_hosting_products_associate_info_process($form, $form_state) {
+  $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "associate"'));
+  // Get the current cart contents and add the submitted info to
+  // site items
+  $cart = uc_cart_get_contents();
+  foreach ($cart as $key => $item) { 
+    if ($item->model == $site_model) {
+      $nid = $form_state['values']['site_nid'];
+      $node = node_load($nid);
+      $item->data['site_data'] = array(
+        'title' => $node->title,
+        'nid' => $node->nid,
+      );
+      uc_cart_update_item($item);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_order
+ */
+function uc_hosting_associate_order ($op, &$arg1, $arg2) {
+  if ($op == 'update' && $arg2 == 'completed') {
+    foreach ($arg1->products as $product) {
+      if (_uc_hosting_products_has_feature ($product)) {
+        // Make the changes necessary to the hosting client
+        $user = uc_hosting_update_client($arg1, $product, 'uc_hosting_associate_client_update');
+      }
+    }
+  }
+}
+
+/**
+ * Callback for client updates
+ *
+ * @see uc_hosting_associate_order().
+ */
+function uc_hosting_associate_client_update ($client, $product, &$hosting_order) {
+  $feature_info = db_fetch_array(db_query('SELECT * FROM {uc_hosting_products} WHERE model = "%s"', $product->model));
+  if ($feature_info['type'] == 'associate') {
+    // Prepare the site data for inclusion in uc_hosting_orders
+    $hosting_order['site_url'] = $product->data['site_data']['title'];
+    $hosting_order['order_data']['associate'][$hosting_order['site_url']] = $product->data['site_data'];
+
+    // Increment the client's site quota
+    $current_limit = db_result(db_query('SELECT value FROM {hosting_client_quota} WHERE client = %d AND resource = "%s"', $client->nid, 'associate'));
+    hosting_quota_set_limit($client->nid, 'associate', $current_limit+$product->qty);
+  }
+}
+
+
+/**
+ * Callback to add the "association" form on the product feature page
+ */
+function uc_hosting_associate_form($form_state, $node, $feature) {
+  $form = array();
+
+  if (!empty($feature)) {
+    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
+  }
+
+  // Grab all the models on this product, get rid of the top -Any- option
+  $models = uc_product_get_models($node);
+  array_shift($models);
+
+  $form['model'] = array(
+    '#type' => 'select',
+    '#title' => t('SKU'),
+    '#default_value' => $hosting_product->model,
+    '#description' => t('This is the SKU that will need to be purchased to associate the purchase with a site.'),
+    '#options' => $models,
+  );
+
+  // @see hosting_quota_get
+  if (user_access('edit all quotas')) {
+    $quotas = module_invoke_all('hosting_quota_resource');
+  }
+  else {
+    $quotas = array();
+    drupal_set_message('You must be able to edit quotas to add this feature.', 'warning');
+  }
+
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+  $form['pfid'] = array(
+    '#type' => 'value',
+    '#value' => $feature['pfid'],
+  );
+
+  $form['quota'] = array(
+    '#type' => 'value',
+    '#value' => 'associate',
+  );
+
+  return uc_product_feature_form ($form);
+}
+
+/**
+ * Site validation function
+ */
+function uc_hosting_associate_form_validate($form, &$form_state) {
+  // For this to work, we can have only one hosting feature per product
+  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
+  if ($check) {
+    form_set_error('model', 'Sorry, only one hosting feature per product.');
+  }
+}
+
+/**
+ * Save the product site feature settings.
+ */
+function uc_hosting_associate_form_submit($form, &$form_state) {
+  $hosting_product = array(
+    'pfid' => $form_state['values']['pfid'],
+    'model' => $form_state['values']['model'],
+    'type' => 'associate',
+    'value' => 0,
+  );
+
+  $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
+  $description .= t('Associate a site with this product when purchasing.');
+
+  $data = array(
+    'pfid' => $form_state['values']['pfid'],
+    'nid' => $form_state['values']['nid'],
+    'fid' => 'hosting_associate',
+    'description' => $description,
+  );
+
+  $form_state['redirect'] = uc_product_feature_save($data);
+
+  // Insert or update uc_hosting_products table
+  if (empty($hosting_product['pfid'])) {
+    $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
+  }
+
+  $hpid = db_result(db_query("SELECT hpid FROM {uc_hosting_products} WHERE pfid = %d", $hosting_product['pfid']));
+
+  $key = NULL;
+  if ($hpid) {
+    $key = 'hpid';
+    $hosting_product['hpid'] = $hpid;
+  }
+
+  drupal_write_record('uc_hosting_products', $hosting_product, $key);
+}
+
+/**
+ * Settings form for the sites
+ */
+function uc_hosting_associate_settings() {
+  $form = array();
+  return $form;
+}
+
+
+
+/**
+ * Helper to determine if the current node can be associated with
+ * an order.
+ */
+function _uc_hosting_products_node_can_associate($nid) {
+  $node = node_load($nid);
+  // @TODO: Make sure the user has access to this node
+  
+  if ($node->type == 'site') {
+    if(db_result(db_query("SELECT pf.nid FROM uc_product_features pf LEFT JOIN uc_hosting_products hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting_associate' AND hp.type = 'associate'"))) {
+      return TRUE;
+    }      
+  }
+}
