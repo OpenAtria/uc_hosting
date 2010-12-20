@@ -2,10 +2,11 @@
 
 function uc_hosting_associate_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   if ($op == 'view' && $node->type == 'site' && _uc_hosting_products_node_can_associate($node->nid)) {
-    $order = db_fetch_object(db_query("SELECT * FROM {uc_hosting_orders} WHERE site_url = '%s'", $node->title));
-    $order_data = unserialize($order->order_data);
-    if (in_array('associate', array_keys($order_data))) {
-      $purchased = TRUE;
+    if ($order = db_fetch_object(db_query("SELECT * FROM {uc_hosting_orders} WHERE site_url = '%s'", $node->title))) {
+      $order_data = unserialize($order->order_data);
+      if (in_array('associate', array_keys($order_data))) {
+        $purchased = TRUE;
+      }
     }
 
     if (!$purchased) {
