@@ -474,7 +474,13 @@ function _uc_hosting_products_has_site_feature ($node) {
   // Create an array of site product nids
   $nidray = array();
   $result = db_query("SELECT pf.nid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting_site' AND hp.type = 'sites'");
-  foreach (db_fetch_array($result) as $nid) {
+
+  $result = db_fetch_array($result);
+  if (!$result) {
+    return FALSE;
+  }
+
+  foreach ($result as $nid) {
     $nidray[] = $nid;
   }
 
