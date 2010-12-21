@@ -289,7 +289,7 @@ function uc_hosting_products_platform_form ($form_state, $node, $feature) {
  */
 function uc_hosting_products_platform_form_validate($form, &$form_state) {
   // For this to work, we can have only one hosting feature per product
-  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
+  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.fid <> 'hosting_platform' AND pf.nid = %d", $form_state['values']['nid']));
   if ($check) {
     form_set_error('model', 'Sorry, only one hosting feature per product.');
   }
@@ -403,7 +403,7 @@ function uc_hosting_products_site_form ($form_state, $node, $feature) {
  */
 function uc_hosting_products_site_form_validate($form, &$form_state) {
   // For this to work, we can have only one hosting feature per product
-  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
+  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.fid <> 'hosting_site' AND pf.nid = %d", $form_state['values']['nid']));
   if ($check) {
     form_set_error('model', 'Sorry, only one hosting feature per product.');
   }
