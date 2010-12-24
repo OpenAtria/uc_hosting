@@ -59,7 +59,7 @@ function uc_hosting_associate_order ($op, &$arg1, $arg2) {
     foreach ($arg1->products as $product) {
       if (_uc_hosting_products_has_feature ($product)) {
         // Make the changes necessary to the hosting client
-        $user = uc_hosting_associate_update_client($arg1, $product, 'uc_hosting_associate_client_update');
+        $user = uc_hosting_update_client($arg1, $product, 'uc_hosting_associate_client_update');
       }
     }
   }
@@ -76,7 +76,19 @@ function uc_hosting_associate_uc_form_alter (&$form, &$form_state, $form_id) {
       '#value' => $nid,
     );
 
-    $form['#submit'][] = 'uc_hosting_products_associate_info_process';
+    //$form['#submit'][] = 'uc_hosting_associate_info_process';
+  }
+}
+
+function uc_hosting_associate_add_to_cart_data($form_values) {
+  if (isset($form_values['site_nid'])) {
+    $node = node_load($form_values['site_nid']);
+    return array(
+      'site_data' => array(
+        'title' => $node->title,
+        'nid' => $node->nid,
+      ),
+    );
   }
 }
 
@@ -85,7 +97,8 @@ function uc_hosting_associate_uc_form_alter (&$form, &$form_state, $form_id) {
  *
  * Adds the site_data settings to the product.
  */
-function uc_hosting_products_associate_info_process($form, $form_state) {
+/*
+function uc_hosting_associate_info_process($form, &$form_state) {
   $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "associate"'));
   // Get the current cart contents and add the submitted info to
   // site items
@@ -102,6 +115,7 @@ function uc_hosting_products_associate_info_process($form, $form_state) {
     }
   }
 }
+*/
 
 /**
  * Callback for client updates
@@ -118,6 +132,10 @@ function uc_hosting_associate_client_update ($client, $product, &$hosting_order)
     // Increment the client's site quota
     $current_limit = db_result(db_query('SELECT value FROM {hosting_client_quota} WHERE client = %d AND resource = "%s"', $client->nid, 'associate'));
     hosting_quota_set_limit($client->nid, 'associate', $current_limit+$product->qty);
+
+    // Call the hosting_site_payment_complete hook to notify other
+    // modules that the site has been successfully paid for.
+    module_invoke_all('hosting_site_payment_complete', $client, $product, $hosting_order);
   }
 }
 
