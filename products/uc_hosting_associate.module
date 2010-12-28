@@ -30,7 +30,7 @@ function uc_hosting_associate_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
     if (!$purchased) {
       // Add the "add to cart" form to the site page
       $form_state = array();
-      $product_nid = db_result(db_query("SELECT p.nid FROM {uc_products} p LEFT JOIN {uc_hosting_products} hp ON p.model = hp.model WHERE hp.type = 'associate' ORDER BY p.vid DESC LIMIT 1"));
+      $product_nid = _uc_hosting_associate_get_product_nid();
       $product = node_load($product_nid);
       $add_to_cart = theme('uc_product_add_to_cart', $product);
       $node->content['purchase'] = array(
@@ -60,6 +60,15 @@ function uc_hosting_associate_order ($op, &$arg1, $arg2) {
       if (_uc_hosting_products_has_feature ($product)) {
         // Make the changes necessary to the hosting client
         $user = uc_hosting_update_client($arg1, $product, 'uc_hosting_associate_client_update');
+      }
+    }
+  }
+  if ($op == 'delete') {
+    if (isset($arg1->products)) {
+      foreach ($arg1->products as $product) {
+        if ($product->nid == _uc_hosting_associate_get_product_nid()) {
+          db_query("DELETE FROM {uc_hosting_orders} WHERE order_id = %d", $product->order_id);
+        }
       }
     }
   }
@@ -288,4 +297,9 @@ function _uc_hosting_products_node_can_associate($nid) {
       return TRUE;
     }      
   }
+}
+
+function _uc_hosting_associate_get_product_nid() {
+  $nid = db_result(db_query("SELECT p.nid FROM {uc_products} p LEFT JOIN {uc_hosting_products} hp ON p.model = hp.model WHERE hp.type = 'associate' ORDER BY p.vid DESC LIMIT 1"));
+  return $nid;
 }
