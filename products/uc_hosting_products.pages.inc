@@ -43,8 +43,6 @@ function uc_hosting_products_site_info_process ($form, $form_state) {
   foreach ($cart as $key => $item) { 
     if ($item->model == $site_model) {
       $item->data['site_data'] = $form_state['values'];
-      $item->module = 'uc_hosting_products';
-      $item->data['module'] = 'uc_hosting_products';
       uc_cart_update_item($item);
     }
   }

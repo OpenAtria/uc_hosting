@@ -45,12 +45,44 @@ function uc_hosting_products_site_info_access () {
 }
 
 /**
+ * Implementation of hook_nodeapi().
+ */
+function uc_hosting_products_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  if ($node->type != 'site') return;
+  switch ($op) {
+    case 'update':
+      // Ensure that the site url stays in sync
+      if ($node->hosting_name != $node->title) {
+        // The url is changing, so update the uc_hosting_orders table
+        db_query("UPDATE {uc_hosting_orders} SET site_url = '%s' WHERE site_url = '%s'", array($node->title, $node->hosting_name));
+      }
+  }
+}
+
+/**
+ * This is called in hosting_site when it rebuilds the site form
+ */
+function uc_hosting_products_hosting_site_options_alter (&$settings, $choices) {
+  // Add platforms in the current cart to available platforms
+  $options = _uc_hosting_products_fetch_cart_options($settings);
+  $settings = $options;
+}
+
+/**
  * Display the site info in the shopping cart
  */
-function uc_hosting_products_cart_display ($item) {
-  $element = uc_product_cart_display($item);
-  $element['description']['#value'] .= theme_uc_hosting_products_site_info($item); 
-  return $element;
+function uc_hosting_products_product_description_alter(&$description, $product) {
+  if ($product->data['site_data']['title']) {
+    $description['site_url'] = array(
+      '#url' => array(
+        '#type' => 'value',
+        '#value' => $product->data['site_data']['title'],
+      ),
+      '#theme' => 'uc_hosting_products_site_info',
+      '#weight' => 0,
+    );
+  }
+  return $description;
 }
 
 /**
@@ -153,13 +185,19 @@ function uc_hosting_products_client_update ($client, $product, &$hosting_order) 
       $current_limit = db_result(db_query('SELECT value FROM {hosting_client_quota} WHERE client = %d AND resource = "%s"', $client->nid, 'sites'));
       hosting_quota_set_limit($client->nid, 'sites', $current_limit+$product->qty);
 
-      // Create the site
+      // Create the site, if there is a site url
       $site = (object) $product->data['site_data'];
-      $site->type = 'site';
-      $site->status = 1;
-      $site->client = $client->nid;
-      $site->uid = $client->uid;
-      node_save($site);
+      if ($site->title) {
+        $site->type = 'site';
+        $site->status = 1;
+        $site->client = $client->nid;
+        $site->uid = $client->uid;
+        node_save($site);
+      }
+      drupal_set_message(t('Your site, @url, has been created. You can view it !here.', array(
+        '@url' => $site->title,
+        '!here' => l('here', "node/{$client->nid}"),
+      )));
       break;
     default:
       // TODO Once there are other quota resources to work with
@@ -243,16 +281,18 @@ function uc_hosting_products_platform_form ($form_state, $node, $feature) {
     '#required' => TRUE,
   );
 
+  $form['#validate'][] = 'uc_hosting_products_single_feature_validate';
+
   return uc_product_feature_form ($form);
 }
 
 /**
- * Platform validation function
+ * Validation function to enforce single feature policy
  */
-function uc_hosting_products_platform_form_validate($form, &$form_state) {
+function uc_hosting_products_single_feature_validate($form, &$form_state) {
   // For this to work, we can have only one hosting feature per product
   $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
-  if ($check) {
+  if ($check && arg(5) == 'add') {
     form_set_error('model', 'Sorry, only one hosting feature per product.');
   }
 }
@@ -357,18 +397,9 @@ function uc_hosting_products_site_form ($form_state, $node, $feature) {
     '#value' => 'sites',
   );
 
-  return uc_product_feature_form ($form);
-}
+  $form['#validate'][] = 'uc_hosting_products_single_feature_validate';
 
-/**
- * Site validation function
- */
-function uc_hosting_products_site_form_validate($form, &$form_state) {
-  // For this to work, we can have only one hosting feature per product
-  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
-  if ($check) {
-    form_set_error('model', 'Sorry, only one hosting feature per product.');
-  }
+  return uc_product_feature_form ($form);
 }
 
 /**
@@ -419,12 +450,26 @@ function uc_hosting_products_site_settings() {
 }
 
 /**
+ * Imp of hook_theme
+ */
+function uc_hosting_products_theme() {
+  return array(
+    'uc_hosting_products_site_info' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+/**
  * Theme function to properly display the site info
  *
  * Presently undeclared
  */
-function theme_uc_hosting_products_site_info($item) {
-  return "<ul>\n<li>{$item->data['site_data']['title']}</li>\n</ul>";
+function theme_uc_hosting_products_site_info($element) {
+  $rows = array(
+    'url' => $element['#url']['#value'],
+  );
+  return theme('item_list', $rows);
 }
 
 /**
@@ -437,7 +482,13 @@ function _uc_hosting_products_has_site_feature ($node) {
   // Create an array of site product nids
   $nidray = array();
   $result = db_query("SELECT pf.nid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = 'hosting_site' AND hp.type = 'sites'");
-  foreach (db_fetch_array($result) as $nid) {
+
+  $result = db_fetch_array($result);
+  if (!$result) {
+    return FALSE;
+  }
+
+  foreach ($result as $nid) {
     $nidray[] = $nid;
   }
 
@@ -456,6 +507,48 @@ function _uc_hosting_products_has_site_feature ($node) {
       break;
   }
 }
+
+/**
+ * Helper function to return any platforms currently in the cart
+ *
+ * @param $platforms
+ *   An existing array of platforms to append to
+ * @param $cart
+ *   An ubercart cart
+ */
+function _uc_hosting_products_fetch_cart_options ($settings = array(), $cart = NULL) {
+  // Create an array of site product nids
+  $nidray = array();
+  $result = db_query("SELECT pf.nid, hp.value, n.title FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid LEFT JOIN {node} n ON n.nid = hp.value WHERE pf.fid = 'hosting_platform' AND hp.type = 'platform';");
+  while ($row = db_fetch_array($result)) {
+    $platforms[$row['nid']] = $row;
+  }
+
+  // Fetch the cart if it is not already there
+  if (!$cart) {
+    $cart = uc_cart_get_contents();
+  }
+
+  foreach ($cart as $product) {
+    if (array_key_exists($product->nid, $platforms)) {
+      $settings['platform'][] = (int) $platforms[$product->nid]['value'];
+
+      // We should do profiles too
+      $profiles = hosting_package_instances_load(array(
+        'p.package_type' => 'profile',
+        'n.status' => 1,
+        'r.type' => 'platform',
+        'r.nid' => $platforms[$product->nid]['value']));
+      foreach ($profiles as $profile) {
+        $settings['profile'][] = (int) $profile->nid;
+      }
+
+    }
+  }
+
+  return $settings;
+}
+
 
 /**
  * Return TRUE if the given product (from an order) has a hosting feature.

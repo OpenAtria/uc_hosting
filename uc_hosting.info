@@ -5,7 +5,6 @@ core = 6.x
 package = "Hosting & Ubercart Integration"
 
 dependencies[] = uc_product
-dependencies[] = uc_attribute
 dependencies[] = uc_order
 dependencies[] = uc_cart
 dependencies[] = uc_store
