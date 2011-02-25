@@ -1,4 +1,3 @@
-; $Id$
 name = "Aegir Ubercart Integration"
 description = "Shared functions for the uc_hosting family of modules."
 core = 6.x

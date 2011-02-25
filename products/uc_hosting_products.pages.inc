@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Callback for purchase/site
