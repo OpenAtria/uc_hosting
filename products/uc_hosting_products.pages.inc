@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Callback for purchase/site
  */

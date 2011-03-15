@@ -1,4 +1,3 @@
-
 Aegir Ubercart Integration
 --------------------------
 
