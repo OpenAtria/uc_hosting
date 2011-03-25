@@ -172,10 +172,12 @@ function uc_hosting_products_order ($op, &$arg1, $arg2) {
 function uc_hosting_products_client_update ($client, $product, &$hosting_order) {
   $feature_info = db_fetch_array(db_query('SELECT * FROM {uc_hosting_products} WHERE model = "%s"', $product->model));
   switch ($feature_info['type']) {
+
     case 'platform':
       db_query('INSERT INTO {hosting_platform_client_access} (pid, cid) VALUES (%d, %d)', $feature_info['value'], $client->nid);
       $hosting_order['order_data']['platform_access'][$feature_info['value']] = $feature_info['value'];
       break;
+
     case 'sites':
       // Prepare the site data for inclusion in uc_hosting_orders
       $hosting_order['site_url'] = $product->data['site_data']['title'];
