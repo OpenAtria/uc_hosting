@@ -13,7 +13,13 @@ function uc_hosting_products_site_info_form ($form_state) {
   }
 
   // Change some of this form's elements
-  unset($site_form['client']);
+  if (is_numeric(arg(2))) {
+    $site_form['client']['#value'] = arg(2);
+    $site_form['client']['#type'] = 'hidden';
+  } 
+  else {
+    unset($site_form['client']);
+  }
   $site_form['db_server']['#type'] = 'value';
   $site_form['db_server']['#value'] = $site_form['db_server']['#default_value'];
 
