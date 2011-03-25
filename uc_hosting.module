@@ -77,17 +77,8 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
   $old_order = db_fetch_array(db_query('SELECT * FROM {uc_hosting_orders} WHERE order_id = %d', $order->order_id));
 
   // Attempt to retrieve the aegir client
-  $clients = hosting_get_client_from_user($user->uid);
-  if ($clients) {
-    // XXX: hack. we should be passed the selected client from the
-    // order instead and validate that.
-    foreach ($clients as $key => $value) {
-      $client_test = node_load($key);
-      if ($order->primary_email == $client_test->email) {
-        $client = $client_test;
-      }
-    }
-  } 
+  $client = hosting_get_client($old_order->client_nid);
+
   if (!$client) {
     // Create a client
     $client = _uc_hosting_add_client($user, $order);
@@ -126,31 +117,28 @@ function _uc_hosting_add_client($user, $order) {
   $client = new stdClass();
 
   $client->type = 'client';
-  $client->title = '';
-  $client->email = ($user->mail) ? $user->mail : $order->primary_email;
-  $client->email_confirm = $client->email;
-  if ($order->delivery_last_name && $order->delivery_first_name) {
-    $client->client_name = "{$order->delivery_first_name} {$order->delivery_last_name}";
-    $client->name = ($user->name) ? $user->name : strtolower($order->delivery_first_name);
-  } else {
-    $client->client_name = "{$order->billing_first_name} {$order->billing_last_name}";
-    $client->name = ($user->name) ? $user->name : strtolower($order->billing_first_name);
-  }
+  
+  $client->name = ($user->name) ? $user->name : strtolower($order->delivery_first_name);
   if ($user->uid) {
     $client->uid = $user->uid;
   } else {
     $client->uid = $order->uid;
   }
 
-  // Set the client organisation to something that exists
+  // Set the client title to something that exists
   if ($order->delivery_company) {
-    $client->organization = $order->delivery_company;
+    $client->title = $order->delivery_company;
   }
   else if ($order->billing_company) {
-    $client->organization = $order->billing_company;
+    $client->title = $order->billing_company;
   }
   else {
-    $client->organization = $client->client_name;
+    $client->title = "{$order->delivery_first_name} {$order->delivery_last_name}";
+  }
+
+  // Make sure the client title is unique
+  if ($suggestion = hosting_client_validate_suggest($client)) {
+    $client->title = $suggestion;
   }
 
   // Validate the node
