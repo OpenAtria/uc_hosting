@@ -45,66 +45,6 @@ function uc_hosting_products_site_info_access () {
 }
 
 /**
- * Add a checkout pane to ubercart that will allow us to select a client
- */
-function uc_hosting_checkout_pane () {
-  $panes[] = array(
-    'id' => 'hosting',
-    'callback' => 'uc_hosting_checkout_options_pane',
-    'title' => t('Aegir options'),
-    'desc' => t("Let the cusotmer choose aegir related options."),
-    'weight' => 1,
-    'process' => TRUE,
-    'collapsible' => FALSE,
-  );
-  return $panes;
-}
-
-/**
- * Process the checkout pane
- */
-function uc_hosting_checkout_options_pane($op, &$arg1, $arg2) {
-  switch ($op) {
-    case 'view':
-      $return = array(
-        'description' => t(''),
-        'theme' => NULL,
-        'next-button' => FALSE,
-      );
-      // If the user is logged in, offer to let them choose which client to buy for
-      global $user;
-      if ($user->uid != 0) {
-        $fake_node = new stdClass();
-        $fake_node->client = 0;
-        $return['contents']['target_client'] = array(
-          '#type' => 'textfield',
-          '#required' => TRUE,
-          '#title' => t('Aegir client to apply this purchase to'),
-          '#default_value' => _hosting_client_site_default($fake_node),
-          '#description' => t('The client who this site belongs to.'),
-          '#autocomplete_path' => 'hosting_client/autocomplete/client',
-        );
-      }
-      return $return; 
-      break;
-    case 'review':
-      if ($arg1->client_nid) {
-        return 'Client to be modified: ' . $arg1->client_title;
-      }
-      else {
-        return NULL;
-      }
-      break;
-    case 'process':
-      $client = hosting_get_client($arg2['target_client']);
-      $arg1->client_nid = $client->nid;
-      $arg1->client_title = $client->title;
-      return uc_hosting_products_valid_client($client); 
-      break;
-  }
-}
-
-/**
  * Implementation of hook_nodeapi().
  */
 function uc_hosting_products_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
@@ -220,13 +160,12 @@ function uc_hosting_products_site_redirect ($form, &$form_state) {
  */
 function uc_hosting_products_order ($op, &$arg1, $arg2) {
   switch ($op) {
-
     case 'update':
       if ($arg2 == 'completed') {
         foreach ($arg1->products as $product) {
           if (_uc_hosting_products_has_feature ($product)) {
             // Make the changes necessary to the hosting client
-            $user = uc_hosting_update_client($arg1, $product, 'uc_hosting_products_client_update');
+            $client = uc_hosting_update_client($arg1, $product, 'uc_hosting_products_client_update');
           }
         }
       }

@@ -61,6 +61,72 @@ function uc_hosting_checkout_validation ($form, $form_state) {
 }
 
 /**
+ * Add a checkout pane to ubercart that will allow us to select a client
+ */
+function uc_hosting_checkout_pane () {
+  $panes[] = array(
+    'id' => 'hosting',
+    'callback' => 'uc_hosting_checkout_options_pane',
+    'title' => t('Aegir options'),
+    'desc' => t("Let the cusotmer choose aegir related options."),
+    'weight' => 1,
+    'process' => TRUE,
+    'collapsible' => FALSE,
+  );
+  return $panes;
+}
+
+/**
+ * Process the checkout pane
+ */
+function uc_hosting_checkout_options_pane($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'view':
+      $return = array(
+        'description' => t(''),
+        'theme' => NULL,
+        'next-button' => FALSE,
+      );
+      // If the user is logged in, offer to let them choose which client to buy for
+      global $user;
+      if ($user->uid != 0) {
+        $fake_node = new stdClass();
+        $fake_node->client = 0;
+        $return['contents']['target_client'] = array(
+          '#type' => 'textfield',
+          '#required' => TRUE,
+          '#title' => t('Aegir client to apply this purchase to'),
+          '#default_value' => _hosting_client_site_default($fake_node),
+          '#description' => t('The client who this site belongs to.'),
+          '#autocomplete_path' => 'hosting_client/autocomplete/client',
+        );
+      }
+      return $return;
+      break;
+    case 'review':
+      if ($arg1->client_nid) {
+        return 'Client to be modified: ' . $arg1->client_title;
+      }
+      else {
+        return NULL;
+      }
+      break;
+    case 'process':
+      $client = hosting_get_client($arg2['target_client']);
+      $arg1->client_nid = $client->nid;
+      $arg1->client_title = $client->title;
+      // Make sure we get the client nid
+      foreach ($arg1->products as $product) {
+        if (_uc_hosting_products_has_feature ($product)) {
+          $client = uc_hosting_update_client($arg1, $product);
+        }
+      }
+      return uc_hosting_products_valid_client($client);
+      break;
+  }
+}
+
+/**
  * Update a client
  *
  * @param $order
@@ -76,22 +142,31 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
   // Attempt to get an existing order
   $old_order = db_fetch_array(db_query('SELECT * FROM {uc_hosting_orders} WHERE order_id = %d', $order->order_id));
 
-  // Attempt to retrieve the aegir client
-  $client = hosting_get_client($old_order->client_nid);
-
-  if (!$client) {
-    // Create a client
-    $client = _uc_hosting_add_client($user, $order);
-  }
-
   // Prepare the updated or new order
   $new_order = array(
     'order_id' => $order->order_id,
-    'client_nid' => $client->nid
   );
   if ($old_order) {
     $new_order['site_url'] = $old_order['site_url'];
     $new_order['order_data'] = unserialize($old_order['order_data']);
+  }
+
+  // Attempt to retrieve the aegir client
+  if ($order->client_nid) {
+    $client = hosting_get_client($order->client_nid);
+  }
+  else {
+    $client = hosting_get_client($old_order['client_nid']);
+  }
+
+  if (!$client) {
+    // Create a client
+    $client = _uc_hosting_add_client($user, $order);
+  }  
+
+  // Insert client data into the order_data
+  if (!$new_order['client_nid']) {
+    $new_order['client_nid'] = $client->nid;
   }
 
   // Call the callback if provided
@@ -101,13 +176,14 @@ function uc_hosting_update_client ($order, $product, $callback = NULL) {
 
   // Write the order to uc_hosting_orders
   $new_order['order_data'] = serialize($new_order['order_data']);
+
   if ($old_order['order_id']) {
     drupal_write_record('uc_hosting_orders', $new_order, 'order_id');
   }
   else {
     drupal_write_record('uc_hosting_orders', $new_order);
   }
-
+  return $client;
 }
 
 /**
@@ -155,6 +231,6 @@ function _uc_hosting_add_client($user, $order) {
   $edit['roles'][_hosting_client_get_role()] = TRUE;
   $user = user_save($user, $edit);
 
-  $client = hosting_get_client_by_email($client->email);
+  $client = hosting_get_client($client->title);
   return $client;
 }
