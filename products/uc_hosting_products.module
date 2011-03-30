@@ -120,21 +120,6 @@ function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
 }
 
 /**
- * Check to make sure the user has the right to do things to this client
- */
-function uc_hosting_products_valid_client($client) {
-  global $user;
-  if (!user_access('administer clients') && !array_key_exists($client->nid, hosting_get_client_from_user($user->uid))) {
-    drupal_set_message(t('Access denied to client @client', array('@client' => $client->title)), 'error');
-    return FALSE;
-  }
-  else {
-    $form_state['values']['target_client'] = $client->nid;
-    return TRUE;
-  }
-}
-
-/**
  * Redirect function to allow clients to choose if they wish to create their site right away
  */
 function uc_hosting_products_site_redirect ($form, &$form_state) {
@@ -170,7 +155,6 @@ function uc_hosting_products_order ($op, &$arg1, $arg2) {
         }
       }
       break;
-
     default:
       break;
   }

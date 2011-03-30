@@ -113,17 +113,54 @@ function uc_hosting_checkout_options_pane($op, &$arg1, $arg2) {
       break;
     case 'process':
       $client = hosting_get_client($arg2['target_client']);
-      $arg1->client_nid = $client->nid;
-      $arg1->client_title = $client->title;
-      // Make sure we get the client nid
-      foreach ($arg1->products as $product) {
-        if (_uc_hosting_products_has_feature ($product)) {
-          $client = uc_hosting_update_client($arg1, $product);
-        }
+      if ($check = uc_hosting_valid_client($client)) {
+        $arg1->client_nid = $client->nid;
+        $arg1->client_title = $client->title;
+        // Make sure we get the client nid
+        $client = uc_hosting_update_client($arg1, $arg1->products[0]);
       }
-      return uc_hosting_products_valid_client($client);
+      return $check;
       break;
   }
+}
+
+/**
+ * Implementation of hook_order
+ *
+ * Insure that we delete orders from our tables when they are deleted from uc 
+ *
+ * @param $op string
+ *   Provided by ubercart on invocation
+ * @param &$arg1
+ *   Different data depending on the op
+ * @param $arg2
+ *   Different data depending on the op
+ */
+function uc_hosting_order ($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'delete':
+      if ($oid = db_result(db_query('SELECT order_id FROM {uc_hosting_orders} WHERE order_id = %d LIMIT 1', $arg1->order_id))) {
+        db_query('DELETE FROM {uc_hosting_orders} WHERE order_id = %d', $oid);
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+/** 
+ * Check to make sure the user has the right to do things to this client 
+ */ 
+function uc_hosting_valid_client($client) { 
+  global $user; 
+  if (!user_access('administer clients') && !array_key_exists($client->nid, hosting_get_client_from_user($user->uid))) { 
+    drupal_set_message(t('Access denied to client @client', array('@client' => $client->title)), 'error'); 
+    return FALSE; 
+  } 
+  else { 
+    $form_state['values']['target_client'] = $client->nid; 
+    return TRUE; 
+  } 
 }
 
 /**
