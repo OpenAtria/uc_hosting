@@ -8,15 +8,18 @@ function uc_hosting_help ($path, $arg) {
 
   $help_text = '';
 
-  if ($path == 'admin/help#uc_hosting') {
-    $help_text .= '<p>' . t('This module provides several features to ubercart products on an Ægir platform. ');
-    $help_list = array(
-      l(t('Enable all quota attributes'), 'admin/store/hosting/quotas'),
-      l(t('Generate a demo product class'), 'admin/store/hosting/product-classes'),
-      t('Create a product in that class'),
-      l(t('Enable the hosting integration feature for that product'), 'admin/store/hosting')
-    );
-    $help_text .= theme('item_list', $help_list, t('Quick start instructions:'), 'ol');
+  switch ($path) {
+    case 'admin/help#uc_hosting':
+      $help_text .= '<p>' . t('This module provides several features to ubercart products on an Ægir platform. ') . '</p>';
+      $quick_list = array(
+        l(t('Make sure the client feature is enabled'), 'admin/hosting/features'),
+        l(t('Create products'), 'node/add/product'),
+        t('Add uc_hosting features to your products'),
+        t('Optionally, enable Ubercart product kits and organise your products into packages.'),
+      );
+    $help_text .= theme('item_list', $quick_list, t('Quick start instructions:'), 'ol');
+    $help_text .= '<p><strong>' . t('For more help and information, consult our !doc', array('!doc' =>l(t('online documentation'), 'http://community.aegirproject.org/node/516'))) . '</strong></p>';
+    break;
   }
 
   return $help_text;
