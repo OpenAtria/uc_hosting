@@ -54,6 +54,13 @@ function uc_hosting_schema () {
  */
 function uc_hosting_install () {
   drupal_install_schema('uc_hosting');
+
+  // Give aegir_client users the view own orders permission
+  $client_perms = db_fetch_object(db_query('SELECT * FROM {permission} p JOIN {role} r ON r.rid = p.rid WHERE r.name = "aegir client"'));
+  if (!preg_match('/view own orders/', $client_perms->perm)) {
+    $client_perms->perm .= ', view own orders';
+    drupal_write_record('permission', $client_perms, 'rid');
+  }
 }
 
 /**
