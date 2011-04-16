@@ -527,6 +527,11 @@ function _uc_hosting_products_fetch_cart_options ($settings = array(), $cart = N
     $platforms[$row['nid']] = $row;
   }
 
+  // No need to go any further if there are no platform accesses to set up
+  if (!is_array($platforms)) {
+    return $settings;
+  }
+
   // Fetch the cart if it is not already there
   if (!$cart) {
     $cart = uc_cart_get_contents();
