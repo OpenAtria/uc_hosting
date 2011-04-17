@@ -128,26 +128,6 @@ function uc_hosting_checkout_options_pane($op, &$arg1, $arg2) {
 }
 
 /**
- * Suggest a new client title
- *
- * @see hosting_client_validate()
- * @param $node
- *   The node being validated
- */
-function uc_hosting_client_suggest($node) {
-  $suggestion = FALSE;
-  for ($i = 0; $i < 10; $i++) {
-    $nid = db_result(db_query("SELECT nid FROM {hosting_client} WHERE LOWER(uname) LIKE LOWER('%s')", hosting_client_sanitize($node->title) . $i));
-    if ($nid && $node->nid != $nid) {
-      $suggestion = $node->title . $i;
-      break;
-    }
-  }
-  return $suggestion;
-}
-
-
-/**
  * Implementation of hook_order
  *
  * Insure that we delete orders from our tables when they are deleted from uc 
@@ -273,7 +253,7 @@ function _uc_hosting_add_client($user, $order) {
   }
 
   // Make sure the client title is unique
-  if ($suggestion = uc_hosting_client_suggest($client)) {
+  if ($suggestion = hosting_client_validate_suggest($client)) {
     $client->title = $suggestion;
   }
 
