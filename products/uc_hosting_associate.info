@@ -1,0 +1,7 @@
+name = "Aegir Ubercart Association Product"
+description = "Allows sites to be associated with orders"
+core = 6.x
+package = "Hosting & Ubercart Integration"
+
+dependencies[] = uc_hosting
+dependencies[] = uc_hosting_products
