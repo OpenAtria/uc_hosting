@@ -521,14 +521,16 @@ function _uc_hosting_products_has_site_feature ($node) {
  */
 function _uc_hosting_products_fetch_cart_options ($settings = array(), $cart = NULL) {
   // Create an array of site product nids
-  $nidray = array();
   $result = db_query("SELECT pf.nid, hp.value, n.title FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid LEFT JOIN {node} n ON n.nid = hp.value WHERE pf.fid = 'hosting_platform' AND hp.type = 'platform';");
+
+  $platforms = array();
+
   while ($row = db_fetch_array($result)) {
-    $platforms[$row['nid']] = $row;
+    if ($row) $platforms[$row['nid']] = $row;
   }
 
   // No need to go any further if there are no platform accesses to set up
-  if (!is_array($platforms)) {
+  if (empty($platforms)) {
     return $settings;
   }
 
