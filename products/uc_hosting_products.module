@@ -102,33 +102,17 @@ function uc_hosting_products_uc_form_alter (&$form, &$form_state, $form_id) {
   $node =& $form['node']['#value'];
 
   // Determine if the product has the site feature or a product in the product kit has the site feature
-
   if (_uc_hosting_products_has_site_feature ($node)) {
-
-    // Offer the option of creating a site now or later
-    $form['create_later'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Create my site later.'),
-      '#weight' => 9,
-    );
-
-    $form['submit']['#weight'] = 10;
-
     // Make sure we go through the purchase/site form 
     $form['#submit'][] = 'uc_hosting_products_site_redirect';
   }
 }
 
 /**
- * Redirect function to allow clients to choose if they wish to create their site right away
+ * Redirect function to allow clients to choose to create their site right away
  */
 function uc_hosting_products_site_redirect ($form, &$form_state) {
-  if (!$form_state['values']['create_later'] && $form_state['values']['target_client']) {
-    drupal_goto("purchase/site/{$form_state['values']['target_client']}");
-  }
-  else if (!$form_state['values']['create_later']) {
-    drupal_goto('purchase/site');
-  }
+  drupal_goto('purchase/site');
 }
 
 /**

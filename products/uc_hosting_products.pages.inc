@@ -12,18 +12,14 @@ function uc_hosting_products_site_info_form ($form_state) {
     $function($form['site'], $state, 'site_node_form');
   }
 
-  // Change some of this form's elements
-  if (is_numeric(arg(2))) {
-    $site_form['client']['#value'] = arg(2);
-    $site_form['client']['#type'] = 'hidden';
-  } 
-  else {
-    unset($site_form['client']);
-  }
+  // We'll determine the client programatically later based on checkout choice
+  unset($site_form['client']);
+
   $site_form['db_server']['#type'] = 'value';
   $site_form['db_server']['#value'] = $site_form['db_server']['#default_value'];
 
   $site_form['#redirect'] = 'cart';
+  $site_form['#validate'][] = 'uc_hosting_products_site_info_skip';
   $site_form['#submit'][] = 'uc_hosting_products_site_info_process';
 
   // Add a submit button to this form
@@ -32,13 +28,28 @@ function uc_hosting_products_site_info_form ($form_state) {
     '#value' => t('Save'),
   );
 
+  // Allow people to skip this step
+  $site_form['skip'] = array(
+    '#type' => 'button',
+    '#value' => t('Skip this step'),
+  );
+
   return $site_form;
+}
+
+/**
+ * Allow us to skip the site_info form
+ */
+function uc_hosting_products_site_info_skip ($form, &$form_state) {
+  if ($form_state['clicked_button']['#value'] == t('Skip this step')) {
+    drupal_goto($form['#redirect']);
+  }
 }
 
 /**
  * Submit function for the create_site_form
  */
-function uc_hosting_products_site_info_process ($form, $form_state) {
+function uc_hosting_products_site_info_process ($form, &$form_state) {
 
   $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
 
