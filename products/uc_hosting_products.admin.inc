@@ -8,23 +8,43 @@
  * Settings form for the admin section
  */
 function uc_hosting_products_admin () {
-  $form = array();
+  $output = '';
 
-  $form['site_feature_settings'] = array(
-    '#type' => 'fieldset',
-    '#tree' => FALSE,
-    '#title' => t('Site feature settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
+  $result = pager_query('SELECT n.title, upf.nid, uhp.model, uhp.pfid FROM {uc_product_features} upf
+    INNER JOIN {uc_hosting_products} uhp ON uhp.pfid = upf.pfid
+    INNER JOIN {node} n ON n.nid = upf.nid
+    ORDER BY n.title ASC', 10);
+
+  $output .= _uc_hosting_product_admin_table($result);
+
+  return $output;
+}
+
+/**
+ * Helper function to generate product lists for uc_hostings admin page
+ *
+ * @param $result
+ *   A mysql result resource
+ * @param $op
+ *   Whether we want to render the table with add or remove links
+ */
+function _uc_hosting_product_admin_table($result) {
+  // Initialise variables to be passed to theme_table
+  $rows = array();
+  $header = array(
+    t('Hosting Products'),
+    t('Model'),
+    t('Links'),
   );
 
-  $form['site_feature_settings']['uc_hosting_products_force_site_creation'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Force clients to create their site on purchase'),
-    '#default_value' => variable_get('uc_hosting_products_force_site_creation', 0),
-    '#description' => t('This will remove the "Skip this step" button on the site creation form shown to clients before checkout.'),
-    '#required' => FALSE,
-  );
+  while ($row = db_fetch_object($result)) {
+    $link = l(t('edit features'), "node/{$row->nid}/edit/features", array('query' => drupal_get_destination()));
+    $rows[] = array(
+      $row->title,
+      $row->model,
+      $link
+    );
+  }
 
-  return system_settings_form($form);
+  return theme('table', $header, $rows);
 }

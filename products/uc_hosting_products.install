@@ -71,6 +71,5 @@ function uc_hosting_products_uninstall () {
   drupal_uninstall_schema('uc_hosting_products');
 
   // Delete any settings variables
-  variable_del('uc_hosting_products_force_site_creation');
 }
 
