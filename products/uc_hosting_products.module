@@ -35,33 +35,12 @@ function uc_hosting_products_menu () {
     'title' => 'Create your site',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('uc_hosting_products_site_info_form'),
-    'access callback' => 'uc_hosting_products_site_info_access',
+    'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
     'file' => 'uc_hosting_products.pages.inc',
   );
 
   return $items;
-}
-
-/**
- * Access callback for the site details form
- */
-function uc_hosting_products_site_info_access () {
-  global $user;
-
-  // Only return true if the user has a cart item of type site
-  $site_model = db_result(db_query('SELECT model FROM {uc_hosting_products} WHERE type = "sites"'));
-  $cart = uc_cart_get_contents();
-  foreach ($cart as $key => $item) {
-    if ($item->model == $site_model) {
-      return TRUE;
-    }
-  }
-
-  // Or if they're user 1
-  if ($user->uid == 1) {
-    return TRUE;
-  }
 }
 
 /**
@@ -381,6 +360,14 @@ function uc_hosting_products_site_form ($form_state, $node, $feature) {
     '#options' => $models,
   );
 
+  $form['force_site_creation'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Force clients to create their site on purchase'),
+    '#default_value' => $hosting_product->value,
+    '#description' => t('This will remove the "Skip this step" button on the site creation form shown to clients before checkout.'),
+    '#required' => FALSE,
+  );
+
   // @see hosting_quota_get
   if (user_access('edit all quotas')) {
     $quotas = module_invoke_all('hosting_quota_resource');
@@ -417,12 +404,13 @@ function uc_hosting_products_site_form_submit($form, &$form_state) {
     'pfid' => $form_state['values']['pfid'],
     'model' => $form_state['values']['model'],
     'type' => 'sites',
-    'value' => 0,
+    'value' => $form_state['values']['force_site_creation'],
   );
 
   $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
   $description .= t('Allows the creation of a site on product purchase.');
 
+  // data to be saved to the uc_product_feature table
   $data = array(
     'pfid' => $form_state['values']['pfid'],
     'nid' => $form_state['values']['nid'],

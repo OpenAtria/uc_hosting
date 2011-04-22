@@ -4,6 +4,13 @@
  */
 function uc_hosting_products_site_info_form ($form_state) {
 
+  // Access check - shunt the user back to cart if they don't have access
+  // At the same time, try to retrieve the site product info
+  $site_product = uc_hosting_products_get_site_product();
+  if (empty($site_product)) {
+    drupal_goto('cart');
+  }
+
   // Retrieve the site form
   $site_form = drupal_retrieve_form('hosting_site_form', $form_state);
   $state = array();
@@ -28,13 +35,13 @@ function uc_hosting_products_site_info_form ($form_state) {
   );
 
   // Conditionally add the skip this site button
-  if (!variable_get('uc_hosting_products_force_site_creation', 0)) {
+  if (!$site_product['value']) {
     // Allow people to skip this step
     $site_form['skip'] = array(
       '#type' => 'button',
       '#value' => t('Skip this step'),
     );
-
+    
     $site_form['#validate'][] = 'uc_hosting_products_site_info_skip';
   }
 
@@ -65,4 +72,25 @@ function uc_hosting_products_site_info_process ($form, &$form_state) {
       uc_cart_update_item($item);
     }
   }
+}
+
+/**
+ * Try to retrieve the relevant site product
+ */
+function uc_hosting_products_get_site_product () {
+  // Retrieve the site models
+  $site_model_result = db_query('SELECT * FROM {uc_hosting_products} WHERE type = "sites"');
+  $site_models = array();
+  while($row = db_fetch_array($site_model_result)) {
+    $site_models[$row['model']] = $row;
+  }
+
+  $cart = uc_cart_get_contents();
+  foreach ($cart as $key => $item) {
+    if (in_array($item->model, array_keys($site_models))) {
+      return $site_models[$item->model];
+    }
+  }
+
+  return FALSE;
 }
