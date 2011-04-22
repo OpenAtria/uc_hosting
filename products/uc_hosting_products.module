@@ -6,10 +6,31 @@
  */
 
 /**
+ * Implementation of hook_help
+ */
+function uc_hosting_products_help ($path, $arg) {
+  switch ($path) {
+    case 'admin/store/hosting':
+      return '<p>' . t('Set options for the different product features provided by Aegir Integration. To actually enable these features for a specific product you must edit that product and add the features one at a time under the features tab.') . '</p>';
+      break;
+  }
+}
+
+/**
  * Implementation of hook_menu
  */
 function uc_hosting_products_menu () {
   $items = array();
+
+  $items['admin/store/hosting'] = array( 
+    'title' => t('Hosting'), 
+    'description' => t('Settings for Aegir integration.'), 
+    'page callback' => 'drupal_get_form', 
+    'page arguments' => array('uc_hosting_products_admin'), 
+    'access arguments' => array('administer store'), 
+    'type' => MENU_NORMAL_ITEM, 
+    'file' => 'uc_hosting_products.admin.inc' 
+  ); 
 
   $items['purchase/site'] = array(
     'title' => 'Create your site',

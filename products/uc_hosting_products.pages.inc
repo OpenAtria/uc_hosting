@@ -19,7 +19,6 @@ function uc_hosting_products_site_info_form ($form_state) {
   $site_form['db_server']['#value'] = $site_form['db_server']['#default_value'];
 
   $site_form['#redirect'] = 'cart';
-  $site_form['#validate'][] = 'uc_hosting_products_site_info_skip';
   $site_form['#submit'][] = 'uc_hosting_products_site_info_process';
 
   // Add a submit button to this form
@@ -28,11 +27,16 @@ function uc_hosting_products_site_info_form ($form_state) {
     '#value' => t('Save'),
   );
 
-  // Allow people to skip this step
-  $site_form['skip'] = array(
-    '#type' => 'button',
-    '#value' => t('Skip this step'),
-  );
+  // Conditionally add the skip this site button
+  if (!variable_get('uc_hosting_products_force_site_creation', 0)) {
+    // Allow people to skip this step
+    $site_form['skip'] = array(
+      '#type' => 'button',
+      '#value' => t('Skip this step'),
+    );
+
+    $site_form['#validate'][] = 'uc_hosting_products_site_info_skip';
+  }
 
   return $site_form;
 }

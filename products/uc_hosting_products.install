@@ -69,5 +69,8 @@ function uc_hosting_products_install() {
 function uc_hosting_products_uninstall () {
   // TODO Probably best to remove all the installed features from the ubercart tables also
   drupal_uninstall_schema('uc_hosting_products');
+
+  // Delete any settings variables
+  variable_del('uc_hosting_products_force_site_creation');
 }
 
