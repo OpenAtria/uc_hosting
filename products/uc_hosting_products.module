@@ -28,7 +28,7 @@ function uc_hosting_products_menu () {
     'page callback' => 'uc_hosting_products_admin', 
     'access arguments' => array('administer store'), 
     'type' => MENU_NORMAL_ITEM, 
-    'file' => 'uc_hosting_products.admin.inc' 
+    'file' => 'inc/uc_hosting_products.admin.inc' 
   ); 
 
   $items['purchase/site'] = array(
@@ -37,7 +37,7 @@ function uc_hosting_products_menu () {
     'page arguments' => array('uc_hosting_products_site_info_form'),
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
-    'file' => 'uc_hosting_products.pages.inc',
+    'file' => 'inc/uc_hosting_products.pages.inc',
   );
 
   return $items;
