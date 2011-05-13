@@ -12,6 +12,9 @@ function uc_hosting_products_site_form ($form_state, $node, $feature) {
 
   // Get default values and shared form elements for all uc_hosting features
   $hosting_product = _uc_hosting_products_feature_fetch_product($feature);
+  if (empty($feature)) {
+     $feature = array('id' => 'hosting_site');
+  }
   _uc_hosting_products_feature_shared_elements(&$form, $node, $feature, $hosting_product);
 
   $form['force_site_creation'] = array(

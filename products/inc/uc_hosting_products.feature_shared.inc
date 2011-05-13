@@ -49,8 +49,8 @@ function _uc_hosting_products_feature_fetch_product($feature) {
  * Validation function to enforce single feature policy
  */
 function uc_hosting_products_single_feature_validate($form, &$form_state) {
-  // For this to work, we can have only one hosting feature per product
-  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid LIKE 'hosting_%' AND pf.nid = %d", $form_state['values']['nid']));
+  // For this to work, we can have only one hosting feature of each type per product
+  $check = db_result(db_query("SELECT pf.pfid FROM {uc_product_features} pf LEFT JOIN {uc_hosting_products} hp ON pf.pfid = hp.pfid WHERE pf.fid = '%s' AND pf.nid = %d", $form['feature_id']['#value'], $form_state['values']['nid']));
   if ($check && arg(5) == 'add') {
     form_set_error('model', 'Sorry, only one hosting feature per product.');
   }
