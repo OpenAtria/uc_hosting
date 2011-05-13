@@ -38,7 +38,7 @@ function _uc_hosting_product_admin_table($result) {
   );
 
   while ($row = db_fetch_object($result)) {
-    $link = l(t('edit features'), "node/{$row->nid}/edit/features", array('query' => drupal_get_destination()));
+    $link = l(t('edit features'), "node/{$row->nid}/edit/features", array('attributes' => array('target' => '_BLANK')));
     $rows[] = array(
       $row->title,
       $row->model,
