@@ -4,6 +4,8 @@
  * Implementation of hook_product_feature().
  */
 function uc_hosting_associate_product_feature () {
+  include_once('inc/uc_hosting_products.feature_shared.inc');
+
   // This sets the feature for associating products with sites
   $features[] = array(
     'id' => 'hosting_associate',
@@ -154,42 +156,12 @@ function uc_hosting_associate_client_update ($client, $product, &$hosting_order)
 function uc_hosting_associate_form($form_state, $node, $feature) {
   $form = array();
 
-  if (!empty($feature)) {
-    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
+  // Get default values and shared form elements for all uc_hosting features
+  $hosting_product = _uc_hosting_products_feature_fetch_product($feature);
+  if (empty($feature)) {
+     $feature = array('id' => 'hosting_associate');
   }
-
-  // Grab all the models on this product, get rid of the top -Any- option
-  $models = uc_product_get_models($node);
-  array_shift($models);
-
-  $form['model'] = array(
-    '#type' => 'select',
-    '#title' => t('SKU'),
-    '#default_value' => $hosting_product->model,
-    '#description' => t('This is the SKU that will need to be purchased to associate the purchase with a site.'),
-    '#options' => $models,
-  );
-
-  /*
-  $platforms = _hosting_get_platforms();
-  $platforms[0] = 'All';
-  sort($platforms);
-
-  $form['platforms'] = array(
-    '#type' => 'select',
-    '#title' => t('Platforms'),
-    '#description' => t('Select the platforms you wish people to be able to make site orders from. Or if you want to only exclude some use the checkbox below.'),
-    '#multiple' => TRUE,
-    '#default_value' => $hosting_product->platforms,
-    '#options' => $platforms,
-  );
-
-  $form['exclude_platforms'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Exclude the selected platforms'),
-    '#default_value' => $hosting_product->exclude_platforms,
-  );
-  */
+  _uc_hosting_products_feature_shared_elements(&$form, $node, $feature, $hosting_product);
   
   // @see hosting_quota_get
   if (user_access('edit all quotas')) {
@@ -199,15 +171,6 @@ function uc_hosting_associate_form($form_state, $node, $feature) {
     $quotas = array();
     drupal_set_message('You must be able to edit quotas to add this feature.', 'warning');
   }
-
-  $form['nid'] = array(
-    '#type' => 'value',
-    '#value' => $node->nid,
-  );
-  $form['pfid'] = array(
-    '#type' => 'value',
-    '#value' => $feature['pfid'],
-  );
 
   $form['quota'] = array(
     '#type' => 'value',
