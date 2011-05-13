@@ -2,15 +2,47 @@
 /**
  * Helper function to generate shared form elements in all features
  */
-function _uc_hosting_products_feature_shared_elements($feature) {
-  $elements = array();
+function _uc_hosting_products_feature_shared_elements(&$form, $node, $feature, $hosting_product) {
 
-  $elements['feature_id'] = array(
+  $form['feature_id'] = array(
     '#type' => 'hidden',
     '#value' => $feature['id'],
   );
 
-  return $elements;
+  // Grab all the models on this product, get rid of the top -Any- option 
+  $models = uc_product_get_models($node); 
+  array_shift($models); 
+ 
+  $form['model'] = array( 
+    '#type' => 'select', 
+    '#title' => t('SKU'), 
+    '#default_value' => $hosting_product->model, 
+    '#description' => t('This is the SKU that will need to be purchased to associate the purchase with a site.'), 
+    '#options' => $models, 
+  );
+
+  $form['nid'] = array(
+    '#type' => 'value',
+    '#value' => $node->nid,
+  );
+
+  $form['pfid'] = array(
+    '#type' => 'value',
+    '#value' => $feature['pfid'],
+  );
+}
+
+/**
+ * Helper function to get an associated hosting_product from a feature
+ */
+function _uc_hosting_products_feature_fetch_product($feature) {
+  if (!empty($feature)) {
+    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
+  }
+  else {
+    $hosting_product = new stdClass();
+  }
+  return $hosting_product;
 }
 
 /**

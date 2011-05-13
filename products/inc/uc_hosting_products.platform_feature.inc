@@ -10,21 +10,9 @@
 function uc_hosting_products_platform_form ($form_state, $node, $feature) {
   $form = array();
 
-  if (!empty($feature)) {
-    $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
-  }
-
-  // Grab all the models on this product, get rid of the top -Any- option
-  $models = uc_product_get_models($node);
-  array_shift($models);
-
-  $form['model'] = array(
-    '#type' => 'select',
-    '#title' => t('SKU'),
-    '#default_value' => $hosting_product->model,
-    '#description' => t('This is the SKU that will need to be purchased to associate the purchase with a site.'),
-    '#options' => $models,
-  );
+  // Get default values and shared form elements for all uc_hosting features
+  $hosting_product = _uc_hosting_products_feature_fetch_product($feature);
+  _uc_hosting_products_feature_shared_elements(&$form, $node, $feature, $hosting_product);
 
   // @see _hosting_get_platforms()
   if (user_access('view locked platforms')) {
@@ -37,15 +25,6 @@ function uc_hosting_products_platform_form ($form_state, $node, $feature) {
     $platforms = array();
     drupal_set_message('You must have permission to access platforms to enable this feature.', 'warning');
   }
-
-  $form['nid'] = array(
-    '#type' => 'value',
-    '#value' => $node->nid,
-  );
-  $form['pfid'] = array(
-    '#type' => 'value',
-    '#value' => $feature['pfid'],
-  );
 
   $form['platform'] = array(
     '#type' => 'select',
