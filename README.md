@@ -41,6 +41,11 @@ Support
 
 You can report bugs, request support and propose patches [via our issue queue on Drupal.org](http://drupal.org/project/issues/uc_hosting).
 
+Development
+-----------
+
+Check out the [roadmap](http://community.aegirproject.org/node/108).
+
 Other Resources
 ---------------
 
