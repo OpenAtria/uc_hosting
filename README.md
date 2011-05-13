@@ -15,17 +15,17 @@ Requirements
 Installation
 ------------
 
-1. Download the module and its dependencies into sites/all/modules on your hostmaster platform ("drush @hostmaster dl uc_hosting ubercart" should work)
-2. Activate the clients feature for hostmaster (admin/hosting/features)
-3. Enable the module uc_hosting_products. This should enable all dependencies (drush @hostmaster en uc_hosting_products)
+1. Download the module and its dependencies into sites/all/modules on your hostmaster platform (`drush @hostmaster dl uc_hosting ubercart` should work)
+2. Activate the clients feature for hostmaster (`admin/hosting/features`)
+3. Enable the module uc_hosting_products. This should enable all dependencies (`drush @hostmaster en uc_hosting_products`)
 
 Creating your first site product
 --------------------------------
 
-1. Create a product. Make sure it is not shippable. (node/add/product)
+1. Create a product. Make sure it is not shippable. (`node/add/product`)
 2. Edit the product. Go to the features tab.
 3. Choose the "Create a site and adjust quotas accordingly" feature. It should use the sku of your product automatically.
-4. Now all you need is a drupal platform that any user can create platforms on and you are ready to go. (node/add/platform)
+4. Now all you need is a drupal platform that any user can create platforms on and you are ready to go. (`node/add/platform`)
 
 Creating more complex offerings using product kits
 --------------------------------------------------
