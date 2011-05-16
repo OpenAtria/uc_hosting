@@ -25,9 +25,9 @@ function uc_hosting_products_admin () {
 
   $output .= l(theme('button', $clear_element), 'admin/store/hosting/clear-errors', array('html' => TRUE, 'query' => drupal_get_destination())) . '<p>&nbsp;</p>';
 
-  $result = pager_query('SELECT n.title, upf.nid, uhp.model, uhp.pfid FROM {uc_product_features} upf
-    INNER JOIN {uc_hosting_products} uhp ON uhp.pfid = upf.pfid
-    INNER JOIN {node} n ON n.nid = upf.nid
+  $result = pager_query('SELECT n.title, u.nid, u.model FROM {uc_products} u
+    INNER JOIN {node} n ON n.nid = u.nid
+    WHERE u.nid IN (SELECT nid FROM {uc_product_features} WHERE fid LIKE "hosting_%")
     ORDER BY n.title ASC', 10);
 
   $output .= _uc_hosting_product_admin_table($result);
