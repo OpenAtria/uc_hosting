@@ -6,6 +6,14 @@
  */
 
 /**
+ * Check we have access to the code in this module
+ */
+function _uc_hosting_products_exists() {
+  watchdog ('uc_hosting', 'Call to _uc_hosting_products_exists');
+  return TRUE;
+}
+
+/**
  * Implementation of hook_help
  */
 function uc_hosting_products_help ($path, $arg) {
