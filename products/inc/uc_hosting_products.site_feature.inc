@@ -82,13 +82,16 @@ function uc_hosting_products_site_form_submit($form, &$form_state) {
     $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
   }
 
-  $hpid = db_result(db_query("SELECT hpid FROM {uc_hosting_products} WHERE pfid = %d", $hosting_product['pfid']));
+  $existing_prod = db_fetch_object(db_query("SELECT hpid, data FROM {uc_hosting_products} WHERE pfid = %d LIMIT 1", $hosting_product['pfid']));
 
   $key = NULL;
-  if ($hpid) {
+  if ($existing_prod->hpid) {
     $key = 'hpid';
     $hosting_product['hpid'] = $hpid;
+    $hosting_product['data'] = unserialize($existing_prod->data);
   }
+
+  $hosting_product['data'] = serialize($hosting_product['data']);
 
   drupal_write_record('uc_hosting_products', $hosting_product, $key);
 }

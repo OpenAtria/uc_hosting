@@ -45,11 +45,17 @@ function uc_hosting_products_schema () {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'normal',
+      ),
     ),
     'primary key' => array('hpid'),
     'indexes' => array(
       'pfid' => array('pfid'),
       'model' => array('model'),
+      'value' => array('value'),
     ),
   );
 
@@ -73,3 +79,16 @@ function uc_hosting_products_uninstall () {
   // Delete any settings variables
 }
 
+/**
+ * Update to add the platform column to the database
+ */
+function uc_hosting_products_update_6100 (&$sandbox) {
+  db_query('ALTER TABLE {uc_hosting_products} ADD COLUMN data TEXT');
+  $platform_products = db_query('SELECT hpid, pfid, value FROM {uc_hosting_products} WHERE type = "platform"');
+  $data = array('platforms' => array());
+  // Now update the data column with data from the platform_products
+  while ($prod = db_fetch_object($platform_products)) {
+    $data['platforms'][] = $prod->value;
+    db_query('UPDATE {uc_hosting_products} SET data = "%s" WHERE hpid = %d AND pfid = %d', serialize($data), $prod->hpid, $prod->pfid);
+  }
+}
