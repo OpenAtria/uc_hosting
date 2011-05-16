@@ -44,6 +44,17 @@ function uc_hosting_products_menu () {
 }
 
 /**
+ * Declare our theme functions via hook_theme
+ */
+function uc_hosting_products_theme () {
+  $functions = array();
+  $functions['uc_hosting_products_site_info'] = array(
+    'arguments' => array('element' => NULL),
+  );
+  return $functions;
+}
+
+/**
  * Implementation of hook_nodeapi().
  */
 function uc_hosting_products_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
@@ -218,17 +229,6 @@ function uc_hosting_products_product_feature () {
   );
 
   return $features;
-}
-
-/**
- * Declare our theme functions via hook_theme
- */
-function uc_hosting_products_theme () {
-  $functions = array();
-  $functions['uc_hosting_products_site_info'] = array(
-    'arguments' => array('element' => NULL),
-  );
-  return $functions;
 }
 
 /**
