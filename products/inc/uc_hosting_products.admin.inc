@@ -5,10 +5,25 @@
  */
 
 /**
- * Settings form for the admin section
+ * Page Callback for the admin section
  */
 function uc_hosting_products_admin () {
   $output = '';
+
+  // Display any errors
+  if ($errors = variable_get('uc_hosting_products_error_state', FALSE)) {
+    drupal_set_message ($errors, 'error');
+  }
+
+  // provide a button to clear the uc_hosting error state messages
+  $clear_element = array(
+    '#name' => 'uc-hosting-products-clear-error-state',
+    '#id' => 'uc-hosting-products-clear-error-state',
+    '#value' => t('Clear all Aegir Ubercart integration error messages.'),
+    '#attributes' => NULL
+  );
+
+  $output .= l(theme('button', $clear_element), 'admin/store/hosting/clear-errors', array('html' => TRUE, 'query' => drupal_get_destination())) . '<p>&nbsp;</p>';
 
   $result = pager_query('SELECT n.title, upf.nid, uhp.model, uhp.pfid FROM {uc_product_features} upf
     INNER JOIN {uc_hosting_products} uhp ON uhp.pfid = upf.pfid
@@ -18,6 +33,15 @@ function uc_hosting_products_admin () {
   $output .= _uc_hosting_product_admin_table($result);
 
   return $output;
+}
+
+/**
+ * Callback to clear error messages
+ */
+function uc_hosting_products_clear_errors () {
+  variable_set('uc_hosting_products_error_state', FALSE);
+  drupal_set_message(t('Error messages cleared!'));
+  drupal_goto('admin/store/hosting');
 }
 
 /**

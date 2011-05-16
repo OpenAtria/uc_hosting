@@ -1,4 +1,5 @@
 <?php
+    _uc_hosting_products_exists();
 /**
  * @file
  * Schemas, install, and uninstall hooks
@@ -67,6 +68,9 @@ function uc_hosting_products_schema () {
  */
 function uc_hosting_products_install() {
   drupal_install_schema('uc_hosting_products');
+
+  // Initialize variables
+  variable_set('uc_hosting_products_error_state', FALSE);
 }
 
 /**
@@ -77,6 +81,7 @@ function uc_hosting_products_uninstall () {
   drupal_uninstall_schema('uc_hosting_products');
 
   // Delete any settings variables
+  variable_del('uc_hosting_products_error_state');
 }
 
 /**

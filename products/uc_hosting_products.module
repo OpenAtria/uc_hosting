@@ -39,6 +39,15 @@ function uc_hosting_products_menu () {
     'file' => 'inc/uc_hosting_products.admin.inc' 
   ); 
 
+  $items['admin/store/hosting/clear-errors'] = array(
+    'title' => t('Clear Aegir product errors'),
+    'description' => t('Clear all Aegir product related errors.'),
+    'page callback' => 'uc_hosting_products_clear_errors',
+    'access arguments' => array('administer store'),
+    'type' => MENU_CALLBACK,
+    'file' => 'inc/uc_hosting_products.admin.inc'
+  );
+
   $items['purchase/site'] = array(
     'title' => 'Create your site',
     'page callback' => 'drupal_get_form',
