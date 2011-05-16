@@ -221,9 +221,21 @@ function uc_hosting_products_product_feature () {
 }
 
 /**
+ * Declare our theme functions via hook_theme
+ */
+function uc_hosting_products_theme () {
+  $functions = array();
+  $functions['uc_hosting_products_site_info'] = array(
+    'arguments' => array('element' => NULL),
+  );
+  return $functions;
+}
+
+/**
  * Theme function to properly display the site info
  *
- * Presently unused
+ * @param $element
+ *   The order element to theme
  */
 function theme_uc_hosting_products_site_info($element) {
   $rows = array(
