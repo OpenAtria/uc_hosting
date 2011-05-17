@@ -51,24 +51,20 @@ function uc_hosting_products_site_info_form ($form_state) {
   // Conditionally add the skip this site button
   if (!$site_product['value']) {
     // Allow people to skip this step
-    $site_form['skip'] = array(
-      '#type' => 'button',
+    $skip_button = array(
+      '#name' => 'skip-this-step',
+      '#id' => 'skip-this-step',
       '#value' => t('Skip this step'),
+      '#attributes' => array('class' => 'form-submit')
     );
-    
-    $site_form['#validate'][] = 'uc_hosting_products_site_info_skip';
+
+    $site_form['skip'] = array(
+      '#type' => 'markup',
+      '#value' => l(theme('button', $skip_button), $site_form['#redirect'], array('html' => TRUE)),
+    );
   }
 
   return $site_form;
-}
-
-/**
- * Allow us to skip the site_info form
- */
-function uc_hosting_products_site_info_skip ($form, &$form_state) {
-  if ($form_state['clicked_button']['#value'] == t('Skip this step')) {
-    drupal_goto($form['#redirect']);
-  }
 }
 
 /**
