@@ -75,14 +75,22 @@ function uc_hosting_products_theme () {
  * Implementation of hook_nodeapi().
  */
 function uc_hosting_products_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  if ($node->type != 'site') return;
   switch ($op) {
     case 'update':
-      // Ensure that the site url stays in sync
-      if ($node->hosting_name != $node->title) {
-        // The url is changing, so update the uc_hosting_orders table
-        db_query("UPDATE {uc_hosting_orders} SET site_url = '%s' WHERE site_url = '%s'", array($node->title, $node->hosting_name));
+      if ($node->type == 'site') {
+        // Ensure that the site url stays in sync
+        if ($node->hosting_name != $node->title) {
+          // The url is changing, so update the uc_hosting_orders table
+          db_query("UPDATE {uc_hosting_orders} SET site_url = '%s' WHERE site_url = '%s'", array($node->title, $node->hosting_name));
+        }
       }
+      break;
+    case 'delete':
+      if (_uc_hosting_products_has_feature($node)) {
+        db_query('DELETE FROM {uc_hosting_products} WHERE model = "%s"', $node->model);
+        db_query('DELETE FROM {uc_product_features} WHERE nid = %d', $node->nid);
+      }
+      break;
   }
 }
 
