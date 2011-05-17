@@ -34,14 +34,73 @@ function uc_hosting_products_site_form ($form_state, $node, $feature) {
     drupal_set_message('You must be able to edit quotas to add this feature.', 'warning');
   }
 
+  $form['site_defaults'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Site Defaults (Optional)'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+    '#tree' => TRUE,
+  );
+
+  // @see _hosting_get_platforms()
+  if (user_access('view locked platforms')) {
+    $platforms = _hosting_get_platforms();
+  }
+  else if (user_access('view platform')) {
+    $platforms = _hosting_get_enabled_platforms();
+  }
+
+  // Install profiles 
+  $profiles = hosting_get_profiles();
+  foreach($profiles as $id => $name) {
+    // Don't allow a site to be provisioned with hostslave or hostmaster profile
+    if (in_array($name, array('Hostslave', 'Hostmaster'))) {
+      unset($profiles[$id]);
+    }
+  }
+
+  $platforms[0] = t("Don't associate a platform");
+  $profiles[0] = t("Don't associate a profile");
+
+  $form['site_defaults']['profile'] = array(
+    '#type' => 'select',
+    '#title' => t('Profile'),
+    '#description' => t('Install this site automatically with this profile.'),
+    '#default_value' => $hosting_product->data['profile'] ? $hosting_product->data['profile'] : 0,
+    '#options' => $profiles,
+    '#required' => FALSE,
+  );
+
+  $form['site_defaults']['platform'] = array(
+    '#type' => 'select',
+    '#title' => t('Platform'),
+    '#description' => t('Install this site automatically onto this platform.'),
+    '#default_value' => $hosting_product->data['platform'] ? $hosting_product->data['platform'] : 0,
+    '#options' => $platforms,
+    '#required' => FALSE,
+  );
+
   $form['quota'] = array(
     '#type' => 'value',
     '#value' => 'sites',
   );
 
   $form['#validate'][] = 'uc_hosting_products_single_feature_validate';
+  $form['#validate'][] = 'uc_hosting_products_site_form_validate';
 
   return uc_product_feature_form ($form);
+}
+
+/**
+ * Validate site feature settings
+ */
+function uc_hosting_products_site_form_validate($form, &$form_state) {
+  if ($form_state['values']['site_defaults']['profile'] && $form_state['values']['site_defaults']['platform']) {
+    $allowed_plats = hosting_get_profile_platforms($form_state['values']['site_defaults']['profile'], FALSE);
+    if (!array_key_exists($form_state['values']['site_defaults']['platform'], $allowed_plats)) {
+      form_set_error('platform', t('That profile is not available on this platform.'));
+    }
+  }
 }
 
 /**
@@ -53,6 +112,7 @@ function uc_hosting_products_site_form_submit($form, &$form_state) {
     'model' => $form_state['values']['model'],
     'type' => 'sites',
     'value' => $form_state['values']['force_site_creation'],
+    'data' => $form_state['values']['site_defaults'],
   );
 
   $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
@@ -79,7 +139,6 @@ function uc_hosting_products_site_form_submit($form, &$form_state) {
   if ($existing_prod->hpid != 0) {
     $key = 'hpid';
     $hosting_product['hpid'] = $existing_prod->hpid;
-    $hosting_product['data'] = unserialize($existing_prod->data);
   }
 
   $hosting_product['data'] = serialize($hosting_product['data']);

@@ -28,6 +28,20 @@ function uc_hosting_products_site_info_form ($form_state) {
   $site_form['#redirect'] = 'cart';
   $site_form['#submit'][] = 'uc_hosting_products_site_info_process';
 
+  // If there are default values set for profiles or platforms then apply them
+  if ($site_product['data']['profile']) {
+    $site_form['profile'] = array(
+      '#type' => 'value',
+      '#value' => $site_product['data']['profile'],
+    );
+  }
+  if ($site_product['data']['platform']) {
+    $site_form['platform'] = array(
+      '#type' => 'value',
+      '#value' => $site_product['data']['platform'],
+    );
+  }
+
   // Add a submit button to this form
   $site_form['submit'] = array(
     '#type' => 'submit',
@@ -83,6 +97,7 @@ function uc_hosting_products_get_site_product () {
   $site_models = array();
   while($row = db_fetch_array($site_model_result)) {
     $site_models[$row['model']] = $row;
+    $site_models[$row['model']]['data'] = unserialize($row['data']);
   }
 
   $cart = uc_cart_get_contents();

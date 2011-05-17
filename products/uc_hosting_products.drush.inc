@@ -16,6 +16,18 @@ function uc_hosting_products_post_hosting_lock_task($task, $data) {
 }
 
 /**
+ * On a migrate task of a platform used in a product, notify the user
+ */
+function uc_hosting_products_post_hosting_migrate_task($task, $data) {
+  if ($task->ref->type == 'platform') {
+    if ($message = _uc_hosting_products_platform_check($task->ref))
+      watchdog('uc_hosting', $message);
+      drupal_set_message($message, 'error');
+  }
+}
+
+
+/**
  * Helper function to check if a platform is used in a product
  *
  * @param $platform
