@@ -34,15 +34,6 @@ function uc_hosting_products_site_form ($form_state, $node, $feature) {
     drupal_set_message('You must be able to edit quotas to add this feature.', 'warning');
   }
 
-  $form['nid'] = array(
-    '#type' => 'value',
-    '#value' => $node->nid,
-  );
-  $form['pfid'] = array(
-    '#type' => 'value',
-    '#value' => $feature['pfid'],
-  );
-
   $form['quota'] = array(
     '#type' => 'value',
     '#value' => 'sites',
