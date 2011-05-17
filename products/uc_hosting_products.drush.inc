@@ -22,7 +22,7 @@ function uc_hosting_products_post_hosting_lock_task($task, $data) {
  *   The node representation of the platform
  */
 function _uc_hosting_products_platform_check($platform) {
-  $affected_products = db_result(db_query('SELECT hpid, pfid FROM uc_hosting_products WHERE data LIKE "%%platforms%%%d%%" LIMIT 1', $platform->nid));
+  $affected_products = db_result(db_query('SELECT hpid, pfid FROM uc_hosting_products WHERE data LIKE "%%platform%%%d%%" LIMIT 1', $platform->nid));
   if ($affected_products) {
     $error_state = variable_get('uc_hosting_products_error_state', FALSE);
     $error_message = '<p>' . t('The platform !platform has been locked or migrated, but is used by Ubercart products. Please review and correct your products. !link', array(

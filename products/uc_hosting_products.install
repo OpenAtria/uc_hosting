@@ -1,5 +1,4 @@
 <?php
-    _uc_hosting_products_exists();
 /**
  * @file
  * Schemas, install, and uninstall hooks
@@ -85,15 +84,57 @@ function uc_hosting_products_uninstall () {
 }
 
 /**
- * Update to add the platform column to the database
+ * Update the values of the data column
+ */
+function uc_hosting_products_update_6101 (&$sandbox) {
+
+  // Initialize the sandbox to process existing products
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['current_hpid'] = 0;
+    $sandbox['max'] = db_result(db_query('SELECT COUNT(DISTINCT hpid) FROM {uc_hosting_products}'));
+  }
+
+  // Now add necessary values to existing products data columns
+  $platform_products = db_query('SELECT hpid, pfid, type, value FROM {uc_hosting_products} WHERE hpid > %d ORDER BY hpid ASC LIMIT 5', $sandbox['current_hpid']);
+  while ($prod = db_fetch_object($platform_products)) {
+    if ($prod->type == 'platform') {
+      $data = array('platform' => $prod->value);
+      db_query('UPDATE {uc_hosting_products} SET data = "%s" WHERE hpid = %d AND pfid = %d', serialize($data), $prod->hpid, $prod->pfid);
+    }
+    else {
+      db_query('UPDATE {uc_hosting_products} SET data = "%s" WHERE hpid = %d AND pfid = %d', serialize(array()), $prod->hpid, $prod->pfid); 
+    }
+    $sandbox['progress']++;
+    $sandbox['current_hpid'] = $prod->hpid;
+  }
+
+  if (empty($sandbox['max'])) {
+    $ret['#finished'] = 1;
+  }
+  else if ($sandbox['progress'] >= $sandbox['max']) {
+    $ret['#finished'] = 1;
+  }
+  else {
+    $ret['#finished'] = $sandbox['progress'] / $sandbox['max'];
+  }
+
+  return $ret;
+}
+
+/**
+ * Update to add the data column to the database
  */
 function uc_hosting_products_update_6100 (&$sandbox) {
-  db_query('ALTER TABLE {uc_hosting_products} ADD COLUMN data TEXT');
-  $platform_products = db_query('SELECT hpid, pfid, value FROM {uc_hosting_products} WHERE type = "platform"');
-  $data = array('platforms' => array());
-  // Now update the data column with data from the platform_products
-  while ($prod = db_fetch_object($platform_products)) {
-    $data['platforms'][] = $prod->value;
-    db_query('UPDATE {uc_hosting_products} SET data = "%s" WHERE hpid = %d AND pfid = %d', serialize($data), $prod->hpid, $prod->pfid);
-  }
+  $ret = array();
+
+  db_add_field($ret, 'uc_hosting_products', 'data', array(
+    'type' => 'text',
+    'not null' => FALSE,
+    'size' => 'normal',
+  ));
+
+  return $ret;
 }
+
+

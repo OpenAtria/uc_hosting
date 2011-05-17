@@ -77,14 +77,14 @@ function uc_hosting_products_platform_form_submit($form, &$form_state) {
   $key = NULL;
   if ($existing_prod->hpid) {
     $key = 'hpid';
-    $hosting_product['hpid'] = $hpid;
+    $hosting_product['hpid'] = $existing_prod->hpid;
     $hosting_product['data'] = unserialize($existing_prod->data);
-    $hosting_product['data']['platforms'] = array($hosting_product['value']);
+    $hosting_product['data']['platform'] = $hosting_product['value'];
   }
   // If necessary build a data array from scratch
   else {
     $hosting_product['data'] = array(
-      'platforms' => array($hosting_product['value']),
+      'platform' => $hosting_product['value'],
     );
   }
 

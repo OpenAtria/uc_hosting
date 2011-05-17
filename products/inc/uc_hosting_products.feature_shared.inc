@@ -38,6 +38,7 @@ function _uc_hosting_products_feature_shared_elements(&$form, $node, $feature, $
 function _uc_hosting_products_feature_fetch_product($feature) {
   if (!empty($feature)) {
     $hosting_product = db_fetch_object(db_query("SELECT * FROM {uc_hosting_products} WHERE pfid = %d", $feature['pfid']));
+    $hosting_product->data = unserialize($hosting_product->data);
   }
   else {
     $hosting_product = new stdClass();

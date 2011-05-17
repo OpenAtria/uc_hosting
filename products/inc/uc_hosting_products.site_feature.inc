@@ -76,9 +76,9 @@ function uc_hosting_products_site_form_submit($form, &$form_state) {
   $existing_prod = db_fetch_object(db_query("SELECT hpid, data FROM {uc_hosting_products} WHERE pfid = %d LIMIT 1", $hosting_product['pfid']));
 
   $key = NULL;
-  if ($existing_prod->hpid) {
+  if ($existing_prod->hpid != 0) {
     $key = 'hpid';
-    $hosting_product['hpid'] = $hpid;
+    $hosting_product['hpid'] = $existing_prod->hpid;
     $hosting_product['data'] = unserialize($existing_prod->data);
   }
 
