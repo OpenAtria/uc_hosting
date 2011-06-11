@@ -1,8 +1,6 @@
 Aegir Ubercart Integration
 ==========================
 
-__This is a beta release!__
-
 This module provides several features to ubercart products on an Aegir platform.
 
 Requirements
@@ -44,6 +42,8 @@ You can report bugs, request support and propose patches [via our issue queue on
 Development
 -----------
 
+If you would like to use uc_hosting to develop your own Aegir dependant product features, be sure to [read the relevant documentation](http://community.aegirproject.org/creating-product-features-using-uchosting-1x).
+
 Check out the [roadmap](http://community.aegirproject.org/node/108).
 
 Other Resources
@@ -52,3 +52,4 @@ Other Resources
 * [Aegir community site](http://community.aegirproject.org)
 * [Ubercart Documentation](http://www.ubercart.org/docs)
 * #aegir IRC channel on [freenode](http://freenode.net/)
+
