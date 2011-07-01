@@ -5,35 +5,31 @@ The Basics
 
 Any module implementing a uc_hosting feature should include both uc_hosting and uc_hosting_products as dependencies. Include these lines in your .info file:
 
-<code>
-dependencies[] = uc_hosting
-dependencies[] = uc_hosting_products
-</code>
+    dependencies[] = uc_hosting
+    dependencies[] = uc_hosting_products
 
 Declaring product features to Ubercart 2.x
 ------------------------------------------
 
 The first step is to implement Ubercart's hook_product_feature. Here is an example implementation for the platform access feature in uc_hosting_products:
 
-<code>
-/**
- * Implementation of hook_product_feature().
- */
-function uc_hosting_products_product_feature () {
-  $features = array();
+    /**
+     * Implementation of hook_product_feature().
+     */
+    function uc_hosting_products_product_feature () {
+      $features = array();
 
-  // Set the feature for the platforms
-  $features[] = array(
-    'id' => 'hosting_platform',
-    'title' => t('Access to a platform'),
-    'callback' => 'uc_hosting_products_platform_form',
-    'delete' => 'uc_hosting_products_feature_delete',
-    'settings' => 'uc_hosting_products_platform_settings',
-  );
+      // Set the feature for the platforms
+      $features[] = array(
+        'id' => 'hosting_platform',
+        'title' => t('Access to a platform'),
+        'callback' => 'uc_hosting_products_platform_form',
+        'delete' => 'uc_hosting_products_feature_delete',
+        'settings' => 'uc_hosting_products_platform_settings',
+      );
 
-  return $features;
-}
-</code>
+      return $features;
+    }
 
 An implementation of hook_product_feature returns a numerical array of associative arrays. Feature arrays must include five keys:
 
@@ -52,123 +48,109 @@ The callback form
 
 This form is called everytime someone adds a product feature to a product. It allows you to set any options for your feature that should be delivered on a per-product basis. Lets take a look at this function for the platform access feature:
 
-<code>
-/**
- * Callback to add the platform form on the product feature page
- */
-function uc_hosting_products_platform_form ($form_state, $node, $feature) {
-  $form = array();
+    /**
+     * Callback to add the platform form on the product feature page
+     */
+    function uc_hosting_products_platform_form ($form_state, $node, $feature) {
+      $form = array();
 
-  // Get default values and shared form elements for all uc_hosting features
-  $hosting_product = _uc_hosting_products_feature_fetch_product($feature);
-  if (empty($feature)) {
-    $feature = array('id' => 'hosting_platform');
-  }
-</code>
+      // Get default values and shared form elements for all uc_hosting features
+      $hosting_product = _uc_hosting_products_feature_fetch_product($feature);
+      if (empty($feature)) {
+        $feature = array('id' => 'hosting_platform');
+      }
 
 ___uc_hosting_products_feature_fetch_product__ attempts to retrieve existing values for this instance of a product feature from the database.
 
-<code>
-  _uc_hosting_products_feature_shared_elements(&$form, $node, $feature, $hosting_product);
-</code>
+      _uc_hosting_products_feature_shared_elements(&$form, $node, $feature, $hosting_product);
 
 ___uc_hosting_products_feature_shared_elements__ declares some form elements that either uc_hosting or Ubercart itself depend on to provide the product feature functionality.
 
-<code>
-  // @see _hosting_get_platforms()
-  if (user_access('view locked platforms')) {
-    $platforms = _hosting_get_platforms();
-  }
-  else if (user_access('view platform')) {
-    $platforms = _hosting_get_enabled_platforms();
-  }
-  else {
-    $platforms = array();
-    drupal_set_message('You must have permission to access platforms to enable this feature.', 'warning');
-  }
+      // @see _hosting_get_platforms()
+      if (user_access('view locked platforms')) {
+        $platforms = _hosting_get_platforms();
+      }
+      else if (user_access('view platform')) {
+        $platforms = _hosting_get_enabled_platforms();
+      }
+      else {
+        $platforms = array();
+        drupal_set_message('You must have permission to access platforms to enable this feature.', 'warning');
+      }
 
-  $form['platform'] = array(
-    '#type' => 'select',
-    '#title' => t('Platform'),
-    '#description' => t('Select the platform to associate with this product.'),
-    '#default_value' => $hosting_product->value,
-    '#options' => $platforms,
-    '#required' => TRUE,
-  );
-</code>
+      $form['platform'] = array(
+        '#type' => 'select',
+        '#title' => t('Platform'),
+        '#description' => t('Select the platform to associate with this product.'),
+        '#default_value' => $hosting_product->value,
+        '#options' => $platforms,
+        '#required' => TRUE,
+      );
 
 This code block generates a list of platforms to allow the admin to select which platform to bind to his product. This code is specific to the platform access implementation - this is where you should include your own form elements relevant to your feature.
 
-<code>
-  $form['#validate'][] = 'uc_hosting_products_single_feature_validate';
-</code>
+      $form['#validate'][] = 'uc_hosting_products_single_feature_validate';
 
 For many implementations, __uc_hosting_products_single_feature_validate__ ensures that a given uc_hosting product feature can only be enabled once on any given product. All of the exising uc_hosting_products features make use of this function.
 
-<code>
-  return uc_product_feature_form ($form);
-}
-</code>
+      return uc_product_feature_form ($form);
+    }
 
 Finally, __uc_product_feature_form__ adds some required form elements from Ubercart.
 
 You also need to make sure to code a submit function for your callback, of the form callback_submit:
 
-<code>
-/**
- * Save the platform feature settings.
- */
-function uc_hosting_products_platform_form_submit($form, &$form_state) {
-  $hosting_product = array(
-    'pfid' => $form_state['values']['pfid'],
-    'model' => $form_state['values']['model'],
-    'type' => 'platform',
-    'value' => $form_state['values']['platform'],
-  );
+    /**
+     * Save the platform feature settings.
+     */
+    function uc_hosting_products_platform_form_submit($form, &$form_state) {
+      $hosting_product = array(
+        'pfid' => $form_state['values']['pfid'],
+        'model' => $form_state['values']['model'],
+        'type' => 'platform',
+        'value' => $form_state['values']['platform'],
+      );
 
-  $platform_node = node_load($hosting_product['value']);
-  $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
-  $description .= t('<strong>Platform:</strong> !platform', array('!platform' => $platform_node->title));
+      $platform_node = node_load($hosting_product['value']);
+      $description = t('<strong>SKU:</strong> !sku<br />', array('!sku' => empty($hosting_product['model']) ? 'Any' : $hosting_product['model']));
+      $description .= t('<strong>Platform:</strong> !platform', array('!platform' => $platform_node->title));
 
-  $data = array(
-    'pfid' => $form_state['values']['pfid'],
-    'nid' => $form_state['values']['nid'],
-    'fid' => 'hosting_platform',
-    'description' => $description,
-  );
+      $data = array(
+        'pfid' => $form_state['values']['pfid'],
+        'nid' => $form_state['values']['nid'],
+        'fid' => 'hosting_platform',
+        'description' => $description,
+      );
 
-  $form_state['redirect'] = uc_product_feature_save($data);
-</code>
+      $form_state['redirect'] = uc_product_feature_save($data);
 
 We manually save the product_feature to ubercart's database tables here. This is so that we can then retrieve the index of the entry in the uc_product_features table for later use in our own data.
 
-<code>
-  // Insert or update uc_hosting_products table
-  if (empty($hosting_product['pfid'])) {
-    $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
-  }
+      // Insert or update uc_hosting_products table
+      if (empty($hosting_product['pfid'])) {
+        $hosting_product['pfid'] = db_last_insert_id('uc_product_features', 'pfid');
+      }
 
-  $existing_prod = db_fetch_object(db_query("SELECT hpid, data FROM {uc_hosting_products} WHERE pfid = %d LIMIT 1", $hosting_product['pfid']));
+      $existing_prod = db_fetch_object(db_query("SELECT hpid, data FROM {uc_hosting_products} WHERE pfid = %d LIMIT 1", $hosting_product['pfid']));
 
-  $key = NULL;
-  if ($existing_prod->hpid) {
-    $key = 'hpid';
-    $hosting_product['hpid'] = $existing_prod->hpid;
-    $hosting_product['data'] = unserialize($existing_prod->data);
-    $hosting_product['data']['platform'] = $hosting_product['value'];
-  }
-  // If necessary build a data array from scratch
-  else {
-    $hosting_product['data'] = array(
-      'platform' => $hosting_product['value'],
-    );
-  }
+      $key = NULL;
+      if ($existing_prod->hpid) {
+        $key = 'hpid';
+        $hosting_product['hpid'] = $existing_prod->hpid;
+        $hosting_product['data'] = unserialize($existing_prod->data);
+        $hosting_product['data']['platform'] = $hosting_product['value'];
+      }
+      // If necessary build a data array from scratch
+      else {
+        $hosting_product['data'] = array(
+          'platform' => $hosting_product['value'],
+        );
+      }
 
-  $hosting_product['data'] = serialize($hosting_product['data']);
+      $hosting_product['data'] = serialize($hosting_product['data']);
 
-  drupal_write_record('uc_hosting_products', $hosting_product, $key);
-}
-</code>
+      drupal_write_record('uc_hosting_products', $hosting_product, $key);
+    }
 
 Note that the uc_hosting_products table has both an integer column __value__, and a longtext column __data__ for storing serialized information about the feature.
 
@@ -179,36 +161,34 @@ uc_hosting assumes that most purchases made via Ubercart are intended to be expr
 
 Lets start by taking a look at uc_hosting_products own implementation of hook_order:
 
-<code>
-/**
- * Implementation of hook_order
- *
- * Actions t$form_state['values']['create_later']o take on order changes involving an aegir product
- *
- * @param $op string
- *   Provided by ubercart on invocation
- * @param &$arg1
- *   Different data depending on the op
- * @param $arg2
- *   Different data depending on the op
- */
-function uc_hosting_products_order ($op, &$arg1, $arg2) {
-  switch ($op) {
-    case 'update':
-      if ($arg2 == 'completed') {
-        foreach ($arg1->products as $product) {
-          if (_uc_hosting_products_has_feature ($product)) {
-            // Make the changes necessary to the hosting client
-            $client = uc_hosting_update_client($arg1, $product, 'uc_hosting_products_client_update');
+    /**
+     * Implementation of hook_order
+     *
+     * Actions t$form_state['values']['create_later']o take on order changes involving an aegir product
+     *
+     * @param $op string
+     *   Provided by ubercart on invocation
+     * @param &$arg1
+     *   Different data depending on the op
+     * @param $arg2
+     *   Different data depending on the op
+     */
+    function uc_hosting_products_order ($op, &$arg1, $arg2) {
+      switch ($op) {
+        case 'update':
+          if ($arg2 == 'completed') {
+            foreach ($arg1->products as $product) {
+              if (_uc_hosting_products_has_feature ($product)) {
+                // Make the changes necessary to the hosting client
+                $client = uc_hosting_update_client($arg1, $product, 'uc_hosting_products_client_update');
+              }
+            }
           }
-        }
+          break;
+        default:
+          break;
       }
-      break;
-    default:
-      break;
-  }
-}
-</code>
+    }
 
 ___uc_hosting_products_has_feature__ is defined in uc_hosting_products.module, and provides some simple logic to detect uc_hosting product features. Rather than use this function, you will most likely want to define your own conditions.
 
