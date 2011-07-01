@@ -1,2 +1,12 @@
 <?php
-
+/**
+ * @file
+ * Automate Aegir tasks to create clients and sites based on uc purchases
+ *
+ * The desired workflow:
+ *   -# A client clicks on a purchase link on an aegir product
+ *   -# uc_hosting gets the signup module form from aegir and has the client fill it out, once for each site in their cart
+ *   -# The client moves on to the cart and checkout screens, where the client info he has already provided is used to prepopulate certain form items
+ *   -# The client completes a payment
+ *   -# uc_hosting sends the signup form data back to aegir, where the site and client are created
+ */
