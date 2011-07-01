@@ -1,71 +1,9 @@
 <?php
 /**
  * @file
- * Schemas, install, and uninstall hooks
+ * Add fields to orders and products to describe Aegir products
+ * 
+ * TODO add fields to orders to contain serialized data describing aegir products and relationships to aegir sites and clients
+ * TODO add fields to products to contain information about aegir features that trigger remote operations
+ * TODO add fields to users to contain relationship info to clients and users in the aegir instance
  */
-
-/**
- * Imp of hook_schema
- */
-function uc_hosting_schema () {
-  $schema = array();
-
-  $schema['uc_hosting_orders'] = array(
-    'description' => 'Stores additional information about the orders',
-    'fields' => array(
-      'order_id' => array(
-        'description' => 'The unique ID of the order.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'client_nid' => array(
-        'description' => 'The nid of the aegir client modified by this order.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'site_url' => array(
-        'description' => 'The url of the site created by this order, if any.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-      ),
-      'order_data' => array(
-        'description' => 'Serialized data concerning the contents of this order.',
-        'type' => 'text',
-        'not null' => TRUE,
-        'size' => 'big',
-      ),
-    ),
-    'indexes' => array(
-      'order_id' => array('order_id'),
-      'client_nid' => array('client_nid'),
-    ),
-  );
-
-  return $schema;
-}
-
-/**
- * Imp of hook_install
- */
-function uc_hosting_install () {
-  drupal_install_schema('uc_hosting');
-
-  // Give aegir_client users the view own orders permission
-  $client_perms = db_fetch_object(db_query('SELECT * FROM {permission} p JOIN {role} r ON r.rid = p.rid WHERE r.name = "aegir client"'));
-  if (!preg_match('/view own orders/', $client_perms->perm)) {
-    $client_perms->perm .= ', view own orders';
-    drupal_write_record('permission', $client_perms, 'rid');
-  }
-}
-
-/**
- * Imp of hook_uninstall
- */
-function uc_hosting_uninstall () {
-  drupal_uninstall_schema('uc_hosting');
-}
