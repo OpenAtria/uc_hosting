@@ -1,10 +1,9 @@
-name = "Aegir Ubercart Integration"
-description = "Shared functions for the uc_hosting family of modules."
-core = 6.x
-package = "Hosting & Ubercart Integration"
+name = "Aegir Remote Storefront"
+description = "Remote storefront creates sites and clients on an Aegir hosting system based on ubercart orders and products"
+core = 7.x
+package = "Ubercart"
 
 dependencies[] = uc_product
 dependencies[] = uc_order
 dependencies[] = uc_cart
 dependencies[] = uc_store
-dependencies[] = hosting_quota
